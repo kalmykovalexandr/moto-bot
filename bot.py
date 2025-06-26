@@ -1,23 +1,30 @@
+import os
 import logging
+import datetime
+import time
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# Логирование для отладки
 logging.basicConfig(level=logging.INFO)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    chat_id = update.effective_chat.id
-    logging.info(f"Photo received from {user.username} in chat {chat_id}")
-    await update.message.reply_text("Фото получено! Скоро начнём загрузку на eBay 😉")
+    await update.message.reply_text("Фото получено! 😉")
+
+def wait_until_evening(start_hour=18, end_hour=23):
+    while True:
+        now = datetime.datetime.now()
+        if start_hour <= now.hour < end_hour:
+            logging.info("Наступило рабочее время. Бот запускается.")
+            break
+        logging.info(f"Сейчас {now.hour}:00 — нерабочее время. Засыпаю на 5 минут...")
+        time.sleep(300)
 
 def main():
-    import os
+    wait_until_evening(start_hour=18, end_hour=23)
+
     token = os.environ.get("BOT_TOKEN")
     app = ApplicationBuilder().token(token).build()
-
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-
     app.run_polling()
 
 if __name__ == '__main__':
