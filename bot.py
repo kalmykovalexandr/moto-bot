@@ -20,7 +20,7 @@ def wait_until_evening(start_hour=18, end_hour=23):
         time.sleep(300)
 
 def main():
-    wait_until_evening(start_hour=10, end_hour=23)
+    wait_until_evening(start_hour=6, end_hour=23)
 
     token = os.environ.get("BOT_TOKEN")
     app = ApplicationBuilder().token(token).build()
