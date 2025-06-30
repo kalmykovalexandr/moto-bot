@@ -44,6 +44,7 @@ def callback():
     else:
         print("❌ Ошибка:")
         print(r.text)
+        print(r.status_code)
         return "❌ Ошибка при получении токенов", 400
 
 if __name__ == "__main__":
