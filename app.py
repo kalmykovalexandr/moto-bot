@@ -1,10 +1,9 @@
+import os
 from flask import Flask, request, jsonify
 import requests, base64
 from urllib.parse import unquote
 
 app = Flask(__name__)
-
-# ← Вставь свои данные
 
 CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
 CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
@@ -48,4 +47,5 @@ def callback():
         return "❌ Ошибка при получении токенов", 400
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
