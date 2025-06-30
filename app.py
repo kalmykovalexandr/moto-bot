@@ -33,7 +33,7 @@ def callback():
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": REDIRECT_URI
+        "redirect_uri": 'Oleksandr_Kalmy-Oleksand-Produc-jhxqqwktz'
     }
 
     r = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
