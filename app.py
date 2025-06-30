@@ -21,6 +21,8 @@ def callback():
         return "❌ Нет кода авторизации", 400
 
     code = unquote(raw_code)
+    print("Code:")
+    print(code)
 
     # Авторизация
     auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
