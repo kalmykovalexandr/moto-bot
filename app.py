@@ -11,6 +11,12 @@ REDIRECT_URI = 'https://web-production-bfa68.up.railway.app/callback'
 SCOPES = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
 RUNAME = 'Oleksandr_Kalmy-Oleksand-Produc-jhxqqwktz'
 
+# Required for offer creation
+MARKETPLACE_ID = "EBAY_IT"
+FULFILLMENT_POLICY_ID = "YOUR_POLICY_ID"
+PAYMENT_POLICY_ID = "YOUR_POLICY_ID"
+RETURN_POLICY_ID = "YOUR_POLICY_ID"
+
 @app.route("/")
 def home():
     return "Bot is running"
@@ -40,11 +46,13 @@ def callback():
     if response.status_code == 200:
         tokens = response.json()
         refresh_token = tokens.get("refresh_token")
+        access_token = tokens.get("access_token")
         print("REFRESH TOKEN:")
         print(refresh_token)
         return jsonify({
-            "message": "Refresh token received",
-            "refresh_token": refresh_token
+            "message": "Access and refresh tokens received",
+            "refresh_token": refresh_token,
+            "access_token": access_token
         })
     else:
         return f"Error fetching token: {response.text}", 400
@@ -73,45 +81,76 @@ def get_access_token():
 
 @app.route("/publish", methods=["POST"])
 def publish():
-    access_token = get_access_token()
-    if not access_token:
-        return "Access token error", 500
+    try:
+        access_token = get_access_token()
+    except Exception as e:
+        return str(e), 500
 
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
-        "Content-Language": "en-US"
+        "Content-Language": "it-IT"
     }
 
-    payload = {
-        "sku": "test-sku-001",
-        "product": {
-            "title": "Test product from bot",
-            "description": "This is a test listing from my Telegram bot.",
-            "aspects": {
-                "Brand": ["Honda"]
-            },
-            "imageUrls": [
-                "https://example.com/image.jpg"
-            ]
-        },
+    sku = "test-sku-001"
+
+    # Step 1: Inventory Item
+    inventory_payload = {
         "availability": {
             "shipToLocationAvailability": {
                 "quantity": 1
             }
         },
-        "price": {
-            "value": "149.99",
-            "currency": "EUR"
+        "condition": "NEW",
+        "product": {
+            "title": "Test Item from Bot",
+            "description": "This is a test item listed via eBay Inventory API.",
+            "aspects": {
+                "Brand": ["Generic"]
+            },
+            "imageUrls": [
+                "https://via.placeholder.com/500"
+            ]
         }
     }
 
-    r = requests.put("https://api.ebay.com/sell/inventory/v1/inventory_item/test-sku-001", headers=headers, json=payload)
+    inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
+    if inv.status_code not in [200, 204]:
+        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}", 500
 
-    if r.status_code == 204:
-        return "Item successfully listed", 200
-    else:
-        return f"Listing error: {r.status_code}\n{r.text}", 500
+    # Step 2: Offer
+    offer_payload = {
+        "sku": sku,
+        "marketplaceId": MARKETPLACE_ID,
+        "format": "FIXED_PRICE",
+        "listingDescription": "Test listing using eBay API.",
+        "availableQuantity": 1,
+        "categoryId": "9355",
+        "listingPolicies": {
+            "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
+            "paymentPolicyId": PAYMENT_POLICY_ID,
+            "returnPolicyId": RETURN_POLICY_ID
+        },
+        "pricingSummary": {
+            "price": {
+                "value": "9.99",
+                "currency": "EUR"
+            }
+        }
+    }
+
+    offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
+    if offer.status_code != 201:
+        return f"Failed to create offer:\n{offer.status_code}\n{offer.text}", 500
+
+    offer_id = offer.json()["offerId"]
+
+    # Step 3: Publish Offer
+    pub = requests.post(f"https://api.ebay.com/sell/inventory/v1/offer/{offer_id}/publish", headers=headers)
+    if pub.status_code != 200:
+        return f"Failed to publish offer:\n{pub.status_code}\n{pub.text}", 500
+
+    return jsonify({"message": "Item published successfully", "offerId": offer_id})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
