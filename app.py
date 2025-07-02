@@ -102,6 +102,7 @@ def publish():
             "quantity": 1
         }
     },
+    "inventoryLocationKey": "sezze-warehouse",
     "condition": "NEW",
     "countryCode": "IT",
     "locale": "it_IT",
