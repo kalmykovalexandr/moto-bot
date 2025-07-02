@@ -97,24 +97,24 @@ def publish():
 
     # Step 1: Inventory Item
     inventory_payload = {
-    "availability": {
-        "shipToLocationAvailability": {
-            "quantity": 1
-        }
-    },
-    "inventoryLocationKey": "sezze-warehouse",
-    "condition": "NEW",
-    "countryCode": "IT",
-    "locale": "it_IT",
-    "product": {
-        "title": "Test Item from Bot",
-        "description": "This is a test item listed via eBay Inventory API.",
-        "aspects": {
-            "Brand": ["Generic"]
+        "availability": {
+            "shipToLocationAvailability": {
+                "quantity": 1
+            }
         },
-        "imageUrls": [
-            "https://via.placeholder.com/500"
-        ]
+        "condition": "NEW",
+        "countryCode": "IT",
+        "locale": "it_IT",
+        "inventoryLocationKey": "sezze-warehouse",  # <-- добавь вот это
+        "product": {
+            "title": "Test Item from Bot",
+            "description": "This is a test item listed via eBay Inventory API.",
+            "aspects": {
+                "Brand": ["Generic"]
+            },
+            "imageUrls": [
+                "https://via.placeholder.com/500"
+            ]
         }
     }
 
