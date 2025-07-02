@@ -139,7 +139,8 @@ def publish():
                 "value": "9.99",
                 "currency": "EUR"
             }
-        }
+        },
+        "listingDuration": "GTC"
     }
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
