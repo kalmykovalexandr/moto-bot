@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
 CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
-REDIRECT_URI = 'https://telegram-seller-bot-production.up.railway.app/callback'
+REDIRECT_URI = 'https://web-production-bfa68.up.railway.app/callback'
 SCOPES = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
 RUNAME = 'Oleksandr_Kalmy-Oleksand-Produc-jhxqqwktz'
 
