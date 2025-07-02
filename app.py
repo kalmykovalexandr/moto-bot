@@ -111,7 +111,9 @@ def publish():
             "imageUrls": [
                 "https://via.placeholder.com/500"
             ]
-        }
+        },
+        "locale": "it_IT",
+        "countryCode": "IT"
     }
 
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
