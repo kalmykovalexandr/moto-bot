@@ -156,6 +156,52 @@ def publish():
 
     return jsonify({"message": "Item published successfully", "offerId": offer_id})
 
+@app.route("/create-location", methods=["POST"])
+def create_location():
+    try:
+        access_token = get_access_token()
+    except Exception as e:
+        return str(e), 500
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    location_key = "sezze-warehouse"
+    url = f"https://api.ebay.com/sell/inventory/v1/location/{location_key}"
+
+    payload = {
+        "location": {
+            "address": {
+                "addressLine1": "Vicolo Galilei 6",
+                "city": "Sezze",
+                "stateOrProvince": "LT",
+                "postalCode": "04018",
+                "country": "IT"
+            },
+            "geoCoordinates": {
+                "latitude": 41.5022,
+                "longitude": 13.0611
+            }
+        },
+        "name": "Sezze Warehouse",
+        "merchantLocationStatus": "ENABLED",
+        "locationInstructions": "Default warehouse for shipping",
+        "locationTypes": ["WAREHOUSE"],
+        "phone": "+39-123-456-7890"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 204:
+        return jsonify({"message": "Location created successfully"})
+    elif response.status_code == 409:
+        return jsonify({"message": "Location already exists"}), 409
+    else:
+        return f"Failed to create location:\n{response.status_code}\n{response.text}", 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
