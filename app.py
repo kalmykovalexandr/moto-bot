@@ -79,7 +79,8 @@ def publish():
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Content-Language": "en-US"
     }
 
     payload = {
