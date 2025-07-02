@@ -103,6 +103,8 @@ def publish():
         }
     },
     "condition": "NEW",
+    "countryCode": "IT",
+    "locale": "it_IT",
     "product": {
         "title": "Test Item from Bot",
         "description": "This is a test item listed via eBay Inventory API.",
@@ -122,6 +124,7 @@ def publish():
     # Step 2: Offer
     offer_payload = {
         "sku": sku,
+        "inventoryLocationKey": "sezze-warehouse",
         "marketplaceId": MARKETPLACE_ID,
         "format": "FIXED_PRICE",
         "listingDescription": "Test listing using eBay API.",
