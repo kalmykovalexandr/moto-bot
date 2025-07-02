@@ -174,22 +174,16 @@ def create_location():
     payload = {
         "location": {
             "address": {
-                "addressLine1": "Vicolo Galilei 6",
                 "city": "Sezze",
                 "stateOrProvince": "LT",
                 "postalCode": "04018",
                 "country": "IT"
-            },
-            "geoCoordinates": {
-                "latitude": 41.5022,
-                "longitude": 13.0611
             }
         },
         "name": "Sezze Warehouse",
         "merchantLocationStatus": "ENABLED",
-        "locationInstructions": "Default warehouse for shipping",
-        "locationTypes": ["WAREHOUSE"],
-        "phone": "+39-123-456-7890"
+        "locationInstructions": "Standard warehouse for shipping",
+        "locationTypes": ["WAREHOUSE"]
     }
 
     response = requests.post(url, headers=headers, json=payload)
