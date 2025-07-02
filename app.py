@@ -103,9 +103,7 @@ def publish():
             }
         },
         "condition": "NEW",
-        "countryCode": "IT",
-        "locale": "it_IT",
-        "inventoryLocationKey": "sezze-warehouse",  # <-- добавь вот это
+        "inventoryLocationKey": "sezze-warehouse",
         "product": {
             "title": "Test Item from Bot",
             "description": "This is a test item listed via eBay Inventory API.",
