@@ -97,27 +97,21 @@ def publish():
 
     # Step 1: Inventory Item
     inventory_payload = {
-        "availability": {
-            "shipToLocationAvailability": {
-                "quantity": 1
-            }
+    "availability": {
+        "shipToLocationAvailability": {
+            "quantity": 1
+        }
+    },
+    "condition": "NEW",
+    "product": {
+        "title": "Test Item from Bot",
+        "description": "This is a test item listed via eBay Inventory API.",
+        "aspects": {
+            "Brand": ["Generic"]
         },
-        "condition": "NEW",
-        "product": {
-            "title": "Test Item from Bot",
-            "description": "This is a test item listed via eBay Inventory API.",
-            "aspects": {
-                "Brand": ["Generic"]
-            },
-            "imageUrls": [
-                "https://via.placeholder.com/500"
-            ]
-        },
-        "shipToLocations": {
-            "country": "IT",
-            "postalCode": "20100",  # Example postal code (Milan)
-            "region": "Lombardia",
-            "city": "Milano"
+        "imageUrls": [
+            "https://via.placeholder.com/500"
+        ]
         }
     }
 
