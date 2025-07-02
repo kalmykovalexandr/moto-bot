@@ -92,7 +92,7 @@ def publish():
         "Content-Language": "it-IT"
     }
 
-    sku = "test-sku-001"
+    sku = "test-sku-002"
 
     # Step 1: Inventory Item
     inventory_payload = {
