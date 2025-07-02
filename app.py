@@ -92,7 +92,7 @@ def publish():
         "Content-Language": "it-IT"
     }
 
-    sku = str(uuid.uuid4())[:12]
+    sku = "test-00101001"
 
     # Step 1: Inventory Item
     inventory_payload = {
