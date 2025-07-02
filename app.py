@@ -92,7 +92,7 @@ def publish():
         "Content-Language": "it-IT"
     }
 
-    sku = "test-sku-002"
+    sku = str(uuid.uuid4())[:12]
 
     # Step 1: Inventory Item
     inventory_payload = {
@@ -112,8 +112,12 @@ def publish():
                 "https://via.placeholder.com/500"
             ]
         },
-        "locale": "it_IT",
-        "countryCode": "IT"
+        "shipToLocations": {
+            "country": "IT",
+            "postalCode": "20100",  # Example postal code (Milan)
+            "region": "Lombardia",
+            "city": "Milano"
+        }
     }
 
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
