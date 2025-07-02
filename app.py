@@ -22,31 +22,35 @@ def callback():
         return "Missing authorization code", 400
 
     code = unquote(raw_code)
-
     auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {auth}"
     }
+
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": RUNAME
+        "redirect_uri": REDIRECT_URI
     }
 
-    r = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
-    if r.status_code == 200:
-        tokens = r.json()
-        with open("refresh_token.txt", "w") as f:
-            f.write(tokens["refresh_token"])
-        return jsonify(tokens)
+    response = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
+
+    if response.status_code == 200:
+        tokens = response.json()
+        refresh_token = tokens.get("refresh_token")
+        print("REFRESH TOKEN:")
+        print(refresh_token)
+        return jsonify({
+            "message": "Refresh token received",
+            "refresh_token": refresh_token
+        })
     else:
-        return f"Error: {r.text}", 400
+        return f"Error fetching token: {response.text}", 400
 
 def get_access_token():
-    with open("refresh_token.txt") as f:
-        refresh_token = f.read().strip()
-
+    refresh_token = os.environ["REFRESH_TOKEN"]
     auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -55,15 +59,17 @@ def get_access_token():
     data = {
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
-        "scope": SCOPES
+        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
     }
 
     r = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
+
     if r.status_code == 200:
-        return r.json()["access_token"]
+        access_token = r.json()["access_token"]
+        return access_token
     else:
-        print("Access token error:", r.text)
-        return None
+        raise Exception(f"Failed to get access token: {r.text}")
+
 
 @app.route("/publish", methods=["POST"])
 def publish():
