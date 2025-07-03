@@ -103,7 +103,6 @@ def publish():
             }
         },
         "condition": "NEW",
-        "inventoryLocationKey": "sezze-warehouse",
         "product": {
             "title": "Test Item from Bot",
             "description": "This is a test item listed via eBay Inventory API.",
@@ -118,7 +117,11 @@ def publish():
 
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
     if inv.status_code not in [200, 204]:
-        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}\n{inv}", 500
+        print("Inventory creation payload:", inventory_payload)
+        print("Response status code:", inv.status_code)
+        print("Response text:", inv.text)
+        print("Response JSON:", inv.json())
+        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}\n{inv.json()}", 500
 
     # Step 2: Offer
     offer_payload = {
