@@ -118,7 +118,7 @@ def publish():
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
     print("Created inventory item:", inv)
     if inv.status_code not in [200, 204]:
-        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}\n{inv.json()}", 500
+        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}}", 500
 
     # Step 2: Offer
     offer_payload = {
@@ -129,9 +129,9 @@ def publish():
         "categoryId": "9355",
         "listingDescription": "Test listing using eBay API.",
         "listingPolicies": {
-            "fulfillmentPolicyId": "3*********0",
-            "paymentPolicyId": "3*********0",
-            "returnPolicyId": "3*********0"
+            "fulfillmentPolicyId": 294952595011,
+            "paymentPolicyId": 294966878011,
+            "returnPolicyId": 294966928011
         },
         "pricingSummary": {
             "price": {
@@ -145,7 +145,7 @@ def publish():
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
     if offer.status_code != 201:
-        return f"Failed to create offer:\n{offer.status_code}\n{offer.text}\n{offer.json()}", 500
+        return f"Failed to create offer:\n{offer.status_code}\n{offer.text}", 500
 
     offer_id = offer.json()["offerId"]
 
