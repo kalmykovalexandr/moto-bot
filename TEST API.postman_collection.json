@@ -1,0 +1,307 @@
+{
+	"info": {
+		"_postman_id": "f1321b1a-09d6-4f18-a202-d51835cd1495",
+		"name": "TEST API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28794417"
+	},
+	"item": [
+		{
+			"name": "get all fulfillments",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.ebay.com/sell/account/v1/fulfillment_policy?marketplace_id=EBAY_IT",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"sell",
+						"account",
+						"v1",
+						"fulfillment_policy"
+					],
+					"query": [
+						{
+							"key": "marketplace_id",
+							"value": "EBAY_IT"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get locations",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.ebay.com/sell/inventory/v1/location",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"sell",
+						"inventory",
+						"v1",
+						"location"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "publish",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://web-production-bfa68.up.railway.app/publish",
+					"protocol": "https",
+					"host": [
+						"web-production-bfa68",
+						"up",
+						"railway",
+						"app"
+					],
+					"path": [
+						"publish"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create new fulfillment",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Italy Flat Rate Shipping\",\r\n  \"marketplaceId\": \"EBAY_IT\",\r\n  \"categoryTypes\": [\r\n    {\r\n      \"name\": \"ALL_EXCLUDING_MOTORS_VEHICLES\",\r\n      \"default\": true\r\n    }\r\n  ],\r\n  \"handlingTime\": {\r\n    \"unit\": \"DAY\",\r\n    \"value\": 3\r\n  },\r\n  \"shippingPolicyType\": \"FULFILLMENT\",\r\n  \"shippingOptions\": [\r\n    {\r\n      \"costType\": \"FLAT_RATE\",\r\n      \"optionType\": \"DOMESTIC\",\r\n      \"shippingServices\": [\r\n        {\r\n          \"shippingServiceCode\": \"IT_ExpressCourier\",\r\n          \"shippingCost\": {\r\n            \"currency\": \"EUR\",\r\n            \"value\": \"20.00\"\r\n          },\r\n          \"freeShipping\": false,\r\n          \"sortOrder\": 1\r\n        }\r\n      ]\r\n    }\r\n  ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.ebay.com/sell/account/v1/fulfillment_policy",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"sell",
+						"account",
+						"v1",
+						"fulfillment_policy"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create new location",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"location\": {\r\n        \"address\": {\r\n            \"addressLine1\": \"Vicolo Galilei 6\",\r\n            \"city\": \"Sezze\",\r\n            \"stateOrProvince\": \"LT\",\r\n            \"postalCode\": \"04018\",\r\n            \"country\": \"IT\"\r\n        },\r\n        \"geoCoordinates\": {\r\n            \"latitude\": 41.5022,\r\n            \"longitude\": 13.0611\r\n        }\r\n    },\r\n    \"name\": \"Sezze Warehouse\",\r\n    \"merchantLocationStatus\": \"ENABLED\",\r\n    \"locationInstructions\": \"Default warehouse for shipping\",\r\n    \"locationTypes\": [\r\n        \"WAREHOUSE\"\r\n    ],\r\n    \"phone\": \"+39-123-456-7890\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://web-production-bfa68.up.railway.app/create-location",
+					"protocol": "https",
+					"host": [
+						"web-production-bfa68",
+						"up",
+						"railway",
+						"app"
+					],
+					"path": [
+						"create-location"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GeteBayDetails",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-EBAY-API-COMPATIBILITY-LEVEL",
+						"value": "967",
+						"type": "text"
+					},
+					{
+						"key": "X-EBAY-API-DEV-NAME",
+						"value": "9ed5a8c3-03ce-400b-a630-ec8e3a3656db",
+						"type": "text"
+					},
+					{
+						"key": "X-EBAY-API-APP-NAME",
+						"value": "Oleksand-Producti-PRD-c8e9abf40-17570312",
+						"type": "text"
+					},
+					{
+						"key": "X-EBAY-API-CERT-NAME",
+						"value": "PRD-8e9abf40dced-24f3-4a83-863b-c761",
+						"type": "text"
+					},
+					{
+						"key": "X-EBAY-API-CALL-NAME",
+						"value": "GeteBayDetails",
+						"type": "text"
+					},
+					{
+						"key": "X-EBAY-API-SITEID",
+						"value": "101",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<GeteBayDetailsRequest xmlns=\"urn:ebay:apis:eBLBaseComponents\">\r\n  <RequesterCredentials>\r\n    <eBayAuthToken>Bearer v^1.1#i^1#r^0#I^3#f^0#p^3#t^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</eBayAuthToken>\r\n  </RequesterCredentials>\r\n  <DetailName>ShippingServiceDetails</DetailName>\r\n</GeteBayDetailsRequest>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.ebay.com/ws/api.dll",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"ws",
+						"api.dll"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "token",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer v^1.1#i^1#f^0#I^3#r^0#p^3#t^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",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.ebay.com/sell/account/v1/fulfillment_policy?marketplace_id=EBAY_IT",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"sell",
+						"account",
+						"v1",
+						"fulfillment_policy"
+					],
+					"query": [
+						{
+							"key": "marketplace_id",
+							"value": "EBAY_IT"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
