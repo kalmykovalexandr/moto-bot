@@ -140,7 +140,7 @@ def publish():
             }
         },
         "quantityLimitPerBuyer": 1,
-        "includeCatalogProductDetails": true
+        "includeCatalogProductDetails": True
     }
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
