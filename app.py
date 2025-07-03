@@ -116,26 +116,22 @@ def publish():
     }
 
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
+    print("Created inventory item:", inv)
     if inv.status_code not in [200, 204]:
-        print("Inventory creation payload:", inventory_payload)
-        print("Response status code:", inv.status_code)
-        print("Response text:", inv.text)
-        print("Response JSON:", inv.json())
         return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}\n{inv.json()}", 500
 
     # Step 2: Offer
     offer_payload = {
         "sku": sku,
-        "inventoryLocationKey": "sezze-warehouse",
         "marketplaceId": MARKETPLACE_ID,
         "format": "FIXED_PRICE",
-        "listingDescription": "Test listing using eBay API.",
         "availableQuantity": 1,
         "categoryId": "9355",
+        "listingDescription": "Test listing using eBay API.",
         "listingPolicies": {
-            "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
-            "paymentPolicyId": PAYMENT_POLICY_ID,
-            "returnPolicyId": RETURN_POLICY_ID
+            "fulfillmentPolicyId": "3*********0",
+            "paymentPolicyId": "3*********0",
+            "returnPolicyId": "3*********0"
         },
         "pricingSummary": {
             "price": {
@@ -143,12 +139,13 @@ def publish():
                 "currency": "EUR"
             }
         },
-        "listingDuration": "GTC"
+        "quantityLimitPerBuyer": 1,
+        "includeCatalogProductDetails": true
     }
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
     if offer.status_code != 201:
-        return f"Failed to create offer:\n{offer.status_code}\n{offer.text}", 500
+        return f"Failed to create offer:\n{offer.status_code}\n{offer.text}\n{offer.json()}", 500
 
     offer_id = offer.json()["offerId"]
 
