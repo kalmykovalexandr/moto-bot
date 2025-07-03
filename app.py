@@ -118,7 +118,7 @@ def publish():
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
     print("Created inventory item:", inv)
     if inv.status_code not in [200, 204]:
-        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}}", 500
+        return f"Failed to create inventory item:\n{inv.status_code}\n{inv.text}", 500
 
     # Step 2: Offer
     offer_payload = {
