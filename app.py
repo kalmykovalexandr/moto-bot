@@ -115,7 +115,8 @@ def publish():
             "aspects": {
                 "Capacità di memorizzazione": ["64 GB"],
                 "Marca": ["Samsung"],
-                "MPN": ["SM-G950F"]
+                "MPN": ["SM-G950F"],
+                "Colore": ["Nero"]
             }
         }
     }
