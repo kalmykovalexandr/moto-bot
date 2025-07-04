@@ -106,7 +106,6 @@ def publish():
     "country": "IT",
     "location": "IT",
     "product": {
-        "aspects": "aspetcts test",
         "brand": "brand test",
         "subtitle": "Test Item from Bot, subtitle",
         "title": "Test Item from Bot",
