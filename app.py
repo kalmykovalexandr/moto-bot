@@ -97,25 +97,23 @@ def publish():
 
     # Step 1: Inventory Item
     inventory_payload = {
-        "availability": {
-            "shipToLocationAvailability": {
-                "quantity": 1
-            }
-        },
-        "condition": "NEW",
-        "country": "IT",
-        "location": "IT",
-        "product": {
-            "title": "Test Item from Bot",
-            "description": "This is a test item listed via eBay Inventory API.",
-            "aspects": {
-                "Brand": ["Generic"]
-            },
-            "imageUrls": [
-                "https://via.placeholder.com/500"
-            ]
+    "availability": {
+        "shipToLocationAvailability": {
+            "quantity": 1
         }
+    },
+    "condition": "NEW",
+    "country": "IT",
+    "location": "IT",
+    "product": {
+        "aspects": "aspetcts test",
+        "brand": "brand test",
+        "subtitle": "Test Item from Bot, subtitle",
+        "title": "Test Item from Bot",
+        "description": "This is a test item listed via eBay Inventory API.",
+        "imageUrls": ["https://via.placeholder.com/500"]
     }
+}
 
     inv = requests.put(f"https://api.ebay.com/sell/inventory/v1/inventory_item/{sku}", headers=headers, json=inventory_payload)
     print("Created inventory item:", inv)
