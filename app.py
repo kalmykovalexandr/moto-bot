@@ -116,7 +116,8 @@ def publish():
                 "Capacità di memorizzazione": ["64 GB"],
                 "Marca": ["Samsung"],
                 "MPN": ["SM-G950F"],
-                "Colore": ["Nero"]
+                "Colore": ["Nero"],
+                "Modello": ["Galaxy S8"]
             }
         }
     }
