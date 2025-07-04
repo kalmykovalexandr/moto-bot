@@ -103,6 +103,8 @@ def publish():
             }
         },
         "condition": "NEW",
+        "country": "IT",
+        "location": "IT",
         "product": {
             "title": "Test Item from Bot",
             "description": "This is a test item listed via eBay Inventory API.",
@@ -128,6 +130,8 @@ def publish():
         "availableQuantity": 1,
         "categoryId": "9355",
         "listingDescription": "Test listing using eBay API.",
+        "country": "IT",
+        "location": "IT",
         "listingPolicies": {
             "fulfillmentPolicyId": 294952595011,
             "paymentPolicyId": 294966878011,
