@@ -107,6 +107,7 @@ def publish():
     "location": "IT",
     "product": {
         "brand": "brand test",
+        "mpn" : "7719",
         "subtitle": "Test Item from Bot, subtitle",
         "title": "Test Item from Bot",
         "description": "This is a test item listed via eBay Inventory API.",
