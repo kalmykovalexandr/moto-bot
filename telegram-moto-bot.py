@@ -83,7 +83,7 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     # Получаем все сохранённые данные
     data = context.user_data
-    result = publish_test_item(  # Или publish_item
+    result = publish_item(
         title=data["title"],
         description=data["description"],
         brand=data["brand"],
