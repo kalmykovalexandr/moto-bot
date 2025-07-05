@@ -5,7 +5,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     CallbackQueryHandler, filters, ContextTypes
 )
-from ebay_api import publish_test_item
+from ebay_api import publish_item
 import tempfile
 from telegram.ext import ConversationHandler
 import cloudinary
