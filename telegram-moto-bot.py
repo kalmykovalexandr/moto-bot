@@ -11,6 +11,7 @@ from telegram.ext import ConversationHandler
 import cloudinary
 import cloudinary.uploader
 from telegram.request import HTTPXRequest
+import requests
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ASKING_PRICE = 1
