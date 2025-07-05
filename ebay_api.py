@@ -1,4 +1,3 @@
-# ebay_api.py
 import os
 import uuid
 import base64
@@ -6,7 +5,6 @@ import requests
 
 CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
 CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
-
 MARKETPLACE_ID = "EBAY_IT"
 FULFILLMENT_POLICY_ID = 294952595011
 PAYMENT_POLICY_ID = 294966878011
@@ -31,7 +29,7 @@ def get_access_token():
     else:
         raise Exception(f"Failed to get access token: {r.text}")
 
-def publish_test_item():
+def publish_item(title, description, brand, model, mpn, color, capacity, image_urls, price):
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -51,18 +49,18 @@ def publish_test_item():
         "country": "IT",
         "location": "IT",
         "product": {
-            "brand": "brand test",
-            "mpn": "7719",
-            "subtitle": "Test Item from Bot, subtitle",
-            "title": "Test Item from Bot",
-            "description": "This is a test item listed via eBay Inventory API.",
-            "imageUrls": ["https://via.placeholder.com/500"],
+            "brand": brand,
+            "mpn": mpn,
+            "subtitle": title[:80],
+            "title": title,
+            "description": description,
+            "imageUrls": image_urls,
             "aspects": {
-                "Capacità di memorizzazione": ["64 GB"],
-                "Marca": ["Samsung"],
-                "MPN": ["SM-G950F"],
-                "Colore": ["Nero"],
-                "Modello": ["Galaxy S8"]
+                "Capacità di memorizzazione": [capacity],
+                "Marca": [brand],
+                "MPN": [mpn],
+                "Colore": [color],
+                "Modello": [model]
             }
         }
     }
@@ -73,11 +71,11 @@ def publish_test_item():
 
     offer_payload = {
         "sku": sku,
-        "marketplaceId": MARKETPLACE_ID,
+        "marketplaceId": "EBAY_IT",
         "format": "FIXED_PRICE",
         "availableQuantity": 1,
         "categoryId": "9355",
-        "listingDescription": "Test listing using eBay API.",
+        "listingDescription": description,
         "country": "IT",
         "location": "IT",
         "listingPolicies": {
@@ -87,7 +85,7 @@ def publish_test_item():
         },
         "pricingSummary": {
             "price": {
-                "value": "9.99",
+                "value": str(price),
                 "currency": "EUR"
             }
         },
@@ -105,4 +103,4 @@ def publish_test_item():
     if pub.status_code != 200:
         return f"Failed to publish offer: {pub.status_code} {pub.text}"
 
-    return f"Item published successfully. Offer ID: {offer_id}"
+    return f"Successfully published offer: {offer_id}"

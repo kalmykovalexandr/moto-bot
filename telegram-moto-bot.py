@@ -6,8 +6,11 @@ from telegram.ext import (
     CallbackQueryHandler, filters, ContextTypes
 )
 from ebay_api import publish_test_item
+import tempfile
+from telegram.ext import ConversationHandler
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+ASKING_PRICE = 1
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,20 +30,74 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Please upload a photo of the item you want to sell.")
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Uploading your photo and preparing the listing...")
+    photos = update.message.photo
+    if not photos:
+        await update.message.reply_text("Please send at least one photo.")
+        return
 
+    # Download all photos (симулируем URLs)
+    image_urls = []
+    for i, photo in enumerate(photos):
+        file = await photo.get_file()
+        temp_path = f"temp_{update.message.from_user.id}_{i}.jpg"
+        await file.download_to_drive(temp_path)
+        hosted_url = "https://via.placeholder.com/500"
+        image_urls.append(hosted_url)
+
+    # Сохраняем данные во временное хранилище
+    context.user_data["image_urls"] = image_urls
+    context.user_data["title"] = "Samsung Galaxy S8"
+    context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
+    context.user_data["brand"] = "Samsung"
+    context.user_data["model"] = "Galaxy S8"
+    context.user_data["mpn"] = "SM-G950F"
+    context.user_data["color"] = "Nero"
+    context.user_data["capacity"] = "64 GB"
+
+    await update.message.reply_text("Please enter the price (in EUR):")
+    return ASKING_PRICE
+
+async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    price_text = update.message.text
     try:
-        result = publish_test_item()  # 👈 вызываем напрямую
-        await update.message.reply_text(result)
-    except Exception as e:
-        logger.error(f"eBay API error: {e}")
-        await update.message.reply_text("An error occurred while publishing to eBay.")
+        price = float(price_text)
+    except ValueError:
+        await update.message.reply_text("Invalid price. Please enter a numeric value like 19.99.")
+        return ASKING_PRICE
+
+    # Получаем все сохранённые данные
+    data = context.user_data
+    result = publish_test_item(  # Или publish_item
+        title=data["title"],
+        description=data["description"],
+        brand=data["brand"],
+        model=data["model"],
+        mpn=data["mpn"],
+        color=data["color"],
+        capacity=data["capacity"],
+        image_urls=data["image_urls"],
+        price=price
+    )
+
+    await update.message.reply_text(result)
+    context.user_data.clear()
+    return ConversationHandler.END
 
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+
+    # Conversation handler
+    conv_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.PHOTO, handle_photo)],
+        states={
+            ASKING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]
+        },
+        fallbacks=[]
+    )
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(conv_handler)
     app.run_polling()
 
 if __name__ == "__main__":
