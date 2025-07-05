@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "f1321b1a-09d6-4f18-a202-d51835cd1495",
+		"_postman_id": "1c53b12e-990f-4d48-9e51-9aa8de70845a",
 		"name": "TEST API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28794417"
+		"_exporter_id": "16592176",
+		"_collection_link": "https://solar-resonance-623543.postman.co/workspace/Flora~a4ec88cf-d896-4a23-b101-ce76c19eca03/collection/16592176-1c53b12e-990f-4d48-9e51-9aa8de70845a?action=share&source=collection_link&creator=16592176"
 	},
 	"item": [
 		{
@@ -71,6 +72,46 @@
 						"inventory",
 						"v1",
 						"location"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get locations Copy",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.ebay.com/commerce/taxonomy/v1/category_tree/{category_tree_id}/get_item_aspects_for_category?category_id=9355",
+					"protocol": "https",
+					"host": [
+						"api",
+						"ebay",
+						"com"
+					],
+					"path": [
+						"commerce",
+						"taxonomy",
+						"v1",
+						"category_tree",
+						"{category_tree_id}",
+						"get_item_aspects_for_category"
+					],
+					"query": [
+						{
+							"key": "category_id",
+							"value": "9355"
+						}
 					]
 				}
 			},
