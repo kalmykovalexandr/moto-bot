@@ -99,21 +99,36 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data.clear()
     return ConversationHandler.END
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
+
+    if update and hasattr(update, "message"):
+        try:
+            await update.message.reply_text("An internal error occurred. The bot will now stop.")
+        except Exception:
+            pass
+
+    # Stop the bot gracefully
+    if context.application:
+        logger.warning("Stopping bot due to error...")
+        await context.application.stop()
+
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    # Conversation handler
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.PHOTO, handle_photo)],
-        states={
-            ASKING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]
-        },
+        states={ASKING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]},
         fallbacks=[]
     )
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(conv_handler)
+
+    # Register error handler
+    app.add_error_handler(error_handler)
+
     app.run_polling()
 
 if __name__ == "__main__":
