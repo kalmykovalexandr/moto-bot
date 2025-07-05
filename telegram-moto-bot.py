@@ -10,6 +10,7 @@ import tempfile
 from telegram.ext import ConversationHandler
 import cloudinary
 import cloudinary.uploader
+from telegram.request import HTTPXRequest
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ASKING_PRICE = 1
@@ -114,7 +115,9 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         await context.application.stop()
 
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
+
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).request(request).build()
 
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.PHOTO, handle_photo)],
@@ -126,7 +129,6 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(conv_handler)
 
-    # Register error handler
     app.add_error_handler(error_handler)
 
     app.run_polling()
