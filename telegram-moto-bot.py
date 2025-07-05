@@ -8,12 +8,20 @@ from telegram.ext import (
 from ebay_api import publish_test_item
 import tempfile
 from telegram.ext import ConversationHandler
+import cloudinary
+import cloudinary.uploader
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ASKING_PRICE = 1
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+cloudinary.config(
+    cloud_name="dczhgkjpa",
+    api_key="838981728989476",
+    api_secret="0qgudi-oz4c8KNRUFsk7lTsXX3M"
+)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Upload Photo", callback_data="upload_photo")]]
@@ -35,16 +43,24 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please send at least one photo.")
         return
 
-    # Download all photos (симулируем URLs)
     image_urls = []
     for i, photo in enumerate(photos):
         file = await photo.get_file()
         temp_path = f"temp_{update.message.from_user.id}_{i}.jpg"
         await file.download_to_drive(temp_path)
-        hosted_url = "https://via.placeholder.com/500"
+
+        # Upload to Cloudinary
+        uploaded = cloudinary.uploader.upload(temp_path)
+        hosted_url = uploaded["secure_url"]
         image_urls.append(hosted_url)
 
-    # Сохраняем данные во временное хранилище
+        # Optionally delete local file
+        try:
+            os.remove(temp_path)
+        except Exception as e:
+            logger.warning(f"Failed to delete temp file: {e}")
+
+    # Save item metadata
     context.user_data["image_urls"] = image_urls
     context.user_data["title"] = "Samsung Galaxy S8"
     context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
