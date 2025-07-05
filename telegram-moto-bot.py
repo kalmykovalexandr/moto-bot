@@ -116,7 +116,8 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main():
     request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
-
+    token = TELEGRAM_TOKEN
+    requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).request(request).build()
 
     conv_handler = ConversationHandler(
