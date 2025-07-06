@@ -364,7 +364,7 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4-vision-preview",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Ты технический специалист по мотоциклам."},
                 {
