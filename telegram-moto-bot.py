@@ -36,13 +36,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "upload_photo":
-        await query.edit_message_text("Please upload a photo of the item you want to sell (send it as a document for full quality).")
+        await query.edit_message_text("Please upload photos of the item (send as documents for full quality).")
 
 async def handle_document_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document = update.message.document
     if not document:
         await update.message.reply_text("Please send a valid image file.")
-        return
+        return ASKING_PRICE
 
     file = await document.get_file()
     temp_path = f"temp_{update.message.from_user.id}_{document.file_unique_id}.jpg"
@@ -53,20 +53,18 @@ async def handle_document_photo(update: Update, context: ContextTypes.DEFAULT_TY
         hosted_url = uploaded["secure_url"]
     except Exception as e:
         logger.error(f"Cloudinary upload failed: {e}")
-        await update.message.reply_text("Failed to upload image. Try again later.")
-        return
+        await update.message.reply_text("Failed to upload image.")
+        return ASKING_PRICE
 
     try:
         os.remove(temp_path)
     except Exception as e:
         logger.warning(f"Failed to delete temp file: {e}")
 
-    # Add image to list
     if "image_urls" not in context.user_data:
         context.user_data["image_urls"] = []
     context.user_data["image_urls"].append(hosted_url)
 
-    # Set item metadata if first photo
     if "title" not in context.user_data:
         context.user_data["title"] = "Samsung Galaxy S8"
         context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
@@ -106,15 +104,12 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
-
     if update and hasattr(update, "message"):
         try:
-            await update.message.reply_text("An internal error occurred. The bot will now stop.")
+            await update.message.reply_text("An internal error occurred.")
         except Exception:
             pass
-
     if context.application:
-        logger.warning("Stopping bot due to error...")
         await context.application.stop()
 
 def main():
@@ -126,7 +121,8 @@ def main():
 
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Document.IMAGE, handle_document_photo)],
-        states={ASKING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]},
+        states={ASKING_PRICE: [MessageHandler(filters.Document.IMAGE, handle_document_photo),
+                               MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]},
         fallbacks=[]
     )
 
