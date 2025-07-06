@@ -24,9 +24,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    cloud_name="dczhgkjpa",
+    api_key="838981728989476",
+    api_secret="0qgudi-oz4c8KNRUFsk7lTsXX3M"
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
