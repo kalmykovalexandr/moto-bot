@@ -6,6 +6,7 @@ import requests
 CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
 CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
 MARKETPLACE_ID = "EBAY_IT"
+MERCHANT_LOCATION_KEY = "sezze-warehouse"
 FULFILLMENT_POLICY_ID = 294952595011
 PAYMENT_POLICY_ID = 294966878011
 RETURN_POLICY_ID = 294966928011
@@ -29,7 +30,7 @@ def get_access_token():
     else:
         raise Exception(f"Failed to get access token: {r.text}")
 
-def publish_item(title, description, brand, model, mpn, color, capacity, image_urls, price):
+def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type):
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -45,22 +46,23 @@ def publish_item(title, description, brand, model, mpn, color, capacity, image_u
                 "quantity": 1
             }
         },
-        "condition": "NEW",
-        "country": "IT",
-        "location": "IT",
+        "condition": "USED",
+        "conditionDescription": "Parte usata con segni di usura estetici, perfettamente funzionante. Controlla le foto per le condizioni esatte. / Used part with cosmetic wear, fully functional. Please check images for exact condition.",
         "product": {
-            "brand": brand,
-            "mpn": mpn,
-            "subtitle": title[:80],
             "title": title,
             "description": description,
             "imageUrls": image_urls,
+            "subtitle": title[:80],
+            "brand": brand,
+            "mpn": mpn,
             "aspects": {
-                "Capacità di memorizzazione": [capacity],
-                "Marca": [brand],
-                "MPN": [mpn],
-                "Colore": [color],
-                "Modello": [model]
+              "Marca": brand,
+              "Modello": model,
+              "Part Type": part_type,
+              "MPN": mpn,
+              "Colore": color,
+              "Compatible Year": compatible_years,
+              "Condition": ["Usato"]
             }
         }
     }
@@ -74,10 +76,8 @@ def publish_item(title, description, brand, model, mpn, color, capacity, image_u
         "marketplaceId": "EBAY_IT",
         "format": "FIXED_PRICE",
         "availableQuantity": 1,
-        "categoryId": "9355",
+        "categoryId": "10063",
         "listingDescription": description,
-        "country": "IT",
-        "location": "IT",
         "listingPolicies": {
             "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
             "paymentPolicyId": PAYMENT_POLICY_ID,
@@ -91,7 +91,11 @@ def publish_item(title, description, brand, model, mpn, color, capacity, image_u
         },
         "quantityLimitPerBuyer": 1,
         "includeCatalogProductDetails": True,
-        "merchantLocationKey": "sezze-warehouse"
+        "merchantLocationKey": MERCHANT_LOCATION_KEY,
+        "tax": {
+            "applyTax": False
+        },
+        "hideBuyerDetails": False
     }
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
