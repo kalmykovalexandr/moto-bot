@@ -8,7 +8,7 @@ import cloudinary
 import cloudinary.uploader
 from telegram.request import HTTPXRequest
 import requests
-import openai
+from openai import OpenAI
 import json
 import re
 
@@ -28,6 +28,8 @@ cloudinary.config(
     api_key="838981728989476",
     api_secret="0qgudi-oz4c8KNRUFsk7lTsXX3M"
 )
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -361,7 +363,7 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
     """
 
     try:
-        response = await openai.ChatCompletion.acreate(
+        response = client.chat.completions.create(
             model="gpt-4-vision-preview",
             messages=[
                 {"role": "system", "content": "Ты технический специалист по мотоциклам."},
