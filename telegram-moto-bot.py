@@ -61,17 +61,22 @@ async def handle_document_photo(update: Update, context: ContextTypes.DEFAULT_TY
     except Exception as e:
         logger.warning(f"Failed to delete temp file: {e}")
 
-    # Save item data
-    context.user_data["image_urls"] = [hosted_url]
-    context.user_data["title"] = "Samsung Galaxy S8"
-    context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
-    context.user_data["brand"] = "Samsung"
-    context.user_data["model"] = "Galaxy S8"
-    context.user_data["mpn"] = "SM-G950F"
-    context.user_data["color"] = "Nero"
-    context.user_data["capacity"] = "64 GB"
+    # Add image to list
+    if "image_urls" not in context.user_data:
+        context.user_data["image_urls"] = []
+    context.user_data["image_urls"].append(hosted_url)
 
-    await update.message.reply_text("Please enter the price (in EUR):")
+    # Set item metadata if first photo
+    if "title" not in context.user_data:
+        context.user_data["title"] = "Samsung Galaxy S8"
+        context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
+        context.user_data["brand"] = "Samsung"
+        context.user_data["model"] = "Galaxy S8"
+        context.user_data["mpn"] = "SM-G950F"
+        context.user_data["color"] = "Nero"
+        context.user_data["capacity"] = "64 GB"
+
+    await update.message.reply_text("Photo uploaded. You can send more or enter the price (in EUR).")
     return ASKING_PRICE
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
