@@ -3,11 +3,10 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
-    CallbackQueryHandler, filters, ContextTypes
+    CallbackQueryHandler, filters, ContextTypes, ConversationHandler
 )
 from ebay_api import publish_item
 import tempfile
-from telegram.ext import ConversationHandler
 import cloudinary
 import cloudinary.uploader
 from telegram.request import HTTPXRequest
@@ -37,33 +36,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "upload_photo":
-        await query.edit_message_text("Please upload a photo of the item you want to sell.")
+        await query.edit_message_text("Please upload a photo of the item you want to sell (send it as a document for full quality).")
 
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    photos = update.message.photo
-    if not photos:
-        await update.message.reply_text("Please send at least one photo.")
+async def handle_document_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    document = update.message.document
+    if not document:
+        await update.message.reply_text("Please send a valid image file.")
         return
 
-    image_urls = []
-    for i, photo in enumerate(photos):
-        file = await photo.get_file()
-        temp_path = f"temp_{update.message.from_user.id}_{i}.jpg"
-        await file.download_to_drive(temp_path)
+    file = await document.get_file()
+    temp_path = f"temp_{update.message.from_user.id}_{document.file_unique_id}.jpg"
+    await file.download_to_drive(temp_path)
 
-        # Upload to Cloudinary
+    try:
         uploaded = cloudinary.uploader.upload(temp_path)
         hosted_url = uploaded["secure_url"]
-        image_urls.append(hosted_url)
+    except Exception as e:
+        logger.error(f"Cloudinary upload failed: {e}")
+        await update.message.reply_text("Failed to upload image. Try again later.")
+        return
 
-        # Optionally delete local file
-        try:
-            os.remove(temp_path)
-        except Exception as e:
-            logger.warning(f"Failed to delete temp file: {e}")
+    try:
+        os.remove(temp_path)
+    except Exception as e:
+        logger.warning(f"Failed to delete temp file: {e}")
 
-    # Save item metadata
-    context.user_data["image_urls"] = image_urls
+    # Save item data
+    context.user_data["image_urls"] = [hosted_url]
     context.user_data["title"] = "Samsung Galaxy S8"
     context.user_data["description"] = "Refurbished Samsung Galaxy S8 64GB - Black"
     context.user_data["brand"] = "Samsung"
@@ -83,7 +82,6 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Invalid price. Please enter a numeric value like 19.99.")
         return ASKING_PRICE
 
-    # Получаем все сохранённые данные
     data = context.user_data
     result = publish_item(
         title=data["title"],
@@ -110,19 +108,19 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         except Exception:
             pass
 
-    # Stop the bot gracefully
     if context.application:
         logger.warning("Stopping bot due to error...")
         await context.application.stop()
 
 def main():
-    request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
     token = TELEGRAM_TOKEN
     requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).request(request).build()
+
+    request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
+    app = ApplicationBuilder().token(token).request(request).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.PHOTO, handle_photo)],
+        entry_points=[MessageHandler(filters.Document.IMAGE, handle_document_photo)],
         states={ASKING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)]},
         fallbacks=[]
     )
@@ -130,7 +128,6 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(conv_handler)
-
     app.add_error_handler(error_handler)
 
     app.run_polling()
