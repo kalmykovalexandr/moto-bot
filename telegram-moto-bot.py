@@ -104,7 +104,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.warning(f"Failed to delete temp file: {e}")
 
-    ai_data = analyze_motorcycle_part(
+    ai_data = await analyze_motorcycle_part(
         image_url=image_urls[0],
         brand=context.user_data["brand"],
         model=context.user_data["model"],
