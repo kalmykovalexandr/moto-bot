@@ -56,13 +56,12 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
             "brand": brand,
             "mpn": mpn,
             "aspects": {
-              "Marca": brand,
-              "Modello": model,
-              "Part Type": part_type,
-              "MPN": mpn,
-              "Colore": color,
-              "Compatible Year": compatible_years,
-              "Condition": ["Usato"]
+                "Brand": brand,
+                "Model": model,
+                "MPN": mpn,
+                "Color": color,
+                "Part Type": part_type,
+                "Compatible Year": compatible_years.split("–") if "–" in compatible_years else [compatible_years]
             }
         }
     }
