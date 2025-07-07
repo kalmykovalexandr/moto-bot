@@ -80,7 +80,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
-    image_urls = []
+    image_urls = context.user_data.get("image_urls", [])
     first_photo_path = None
 
     for i, item in enumerate(files):
@@ -105,6 +105,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         os.remove(temp_path)
             except Exception as e:
                 logger.warning(f"Failed to delete temp file: {e}")
+
+    context.user_data["image_urls"] = image_urls
+
+    # Skip duplicate OpenAI calls
+    if "title" in context.user_data and "description" in context.user_data:
+        await update.message.reply_text("Photo(s) uploaded.")
+        return ASKING_PRICE
 
     ai_data = await analyze_motorcycle_part(
         image_url=image_urls[0],
@@ -390,7 +397,7 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
         )
 
         text = response.choices[0].message.content.strip()
-        print(f"[DEBUG] AI Response: {text}")  # Добавь лог
+        print(f"[DEBUG] AI Response: {text}")
 
         json_match = re.search(r"\{.*\}", text, re.DOTALL)
         if not json_match:
