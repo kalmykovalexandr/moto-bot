@@ -56,13 +56,18 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
             "brand": brand,
             "mpn": mpn,
             "aspects": {
-                "Brand": brand,
-                "Model": model,
-                "MPN": mpn,
-                "Color": color,
-                "Part Type": part_type,
-                "Compatible Year": compatible_years.split("–") if "–" in compatible_years else [compatible_years]
-            }
+                  "Marca": brand,
+                  "MPN": mpn,
+                  "Produttore compatibile": brand,
+                  "Tipo": part_type,
+                  "Colore": color,
+                  "Ricambio": ["Sì"],
+                  "Destinazione d'uso": ["Parte di ricambio"],
+                  "Quantità": "1",
+                  "Codice ricambio originale OE/OEM": ["HD-12345"],
+                  "Garanzia produttore": "1 anno",
+                  "Paese di fabbricazione": "Giappone"
+                }
         }
     }
 
@@ -75,7 +80,7 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
         "marketplaceId": "EBAY_IT",
         "format": "FIXED_PRICE",
         "availableQuantity": 1,
-        "categoryId": "10063",
+        "categoryId": "179753",
         "listingDescription": description,
         "listingPolicies": {
             "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
