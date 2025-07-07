@@ -359,11 +359,22 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
     - recommended_oil
     - oil_capacity
 
+    Ответь ТОЛЬКО в формате JSON (не добавляй ничего другого, только JSON):
+    {{
+      "is_motor": true/false,
+      "part_type": "название на итальянском",
+      "color": "цвет на итальянском",
+      "compatible_years": "например, 1999–2003",
+      "engine_type": "...",
+      "displacement": "...",
+      ...
+    }}
+
     Если что-то неизвестно — напиши "N/A".
     """
 
     try:
-        response = client.chat.completions.create(
+        response = await openai.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Ты технический специалист по мотоциклам."},
@@ -378,15 +389,15 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
             max_tokens=1000
         )
 
-        raw_response = response.choices[0].message.content
-        logger.debug(f"AI raw response: {raw_response}")
+        text = response.choices[0].message.content.strip()
+        print(f"[DEBUG] AI Response: {text}")  # Добавь лог
 
-        match = re.search(r'\{.*\}', raw_response, re.DOTALL)
-        if match:
-            json_text = match.group()
-            return json.loads(json_text)
-        else:
-            raise ValueError("No JSON object found in AI response.")
+        json_match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not json_match:
+            logger.error("AI response is not JSON-formatted.")
+            return fallback_data()
+
+        return json.loads(json_match.group())
 
     except Exception as e:
         logger.error(f"Failed to parse AI response: {e}")
