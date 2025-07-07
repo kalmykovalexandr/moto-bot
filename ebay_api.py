@@ -56,17 +56,13 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
             "brand": brand,
             "mpn": mpn,
             "aspects": {
-                  "Marca": brand,
                   "MPN": mpn,
                   "Produttore compatibile": brand,
                   "Tipo": part_type,
                   "Colore": color,
                   "Ricambio": ["Sì"],
                   "Destinazione d'uso": ["Parte di ricambio"],
-                  "Quantità": "1",
-                  "Codice ricambio originale OE/OEM": ["HD-12345"],
-                  "Garanzia produttore": "1 anno",
-                  "Paese di fabbricazione": "Giappone"
+                  "Quantità": "1"
                 }
         }
     }
