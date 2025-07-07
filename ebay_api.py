@@ -62,8 +62,7 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
                   "Tipo": [part_type],
                   "Colore": [color],
                   "Ricambio": ["Sì"],
-                  "Destinazione d'uso": ["Parte di ricambio"],
-                  "Quantità": "1"
+                  "Destinazione d'uso": ["Parte di ricambio"]
                 }
         }
     }
