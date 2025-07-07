@@ -108,8 +108,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["image_urls"] = image_urls
 
-    # Skip duplicate OpenAI calls
-    if "title" in context.user_data and "description" in context.user_data:
+    # Пропустить повторный вызов OpenAI, если уже делали
+    if context.user_data.get("ai_data_fetched"):
         await update.message.reply_text("Photo(s) uploaded.")
         return ASKING_PRICE
 
@@ -177,7 +177,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "description": description,
         "color": ai_data["color"],
         "compatible_years": ai_data["compatible_years"],
-        "part_type": ai_data["part_type"]
+        "part_type": ai_data["part_type"],
+        "ai_data_fetched": True
     })
 
     await update.message.reply_text("Photo(s) uploaded.")
