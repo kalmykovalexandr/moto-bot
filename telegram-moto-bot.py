@@ -374,7 +374,7 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
     """
 
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Ты технический специалист по мотоциклам."},
