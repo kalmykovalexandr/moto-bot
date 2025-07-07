@@ -56,10 +56,11 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
             "brand": brand,
             "mpn": mpn,
             "aspects": {
-                  "MPN": mpn,
-                  "Produttore compatibile": brand,
-                  "Tipo": part_type,
-                  "Colore": color,
+                  "Marca": [brand],
+                  "MPN": [mpn],
+                  "Produttore compatibile": [brand],
+                  "Tipo": [part_type],
+                  "Colore": [color],
                   "Ricambio": ["Sì"],
                   "Destinazione d'uso": ["Parte di ricambio"],
                   "Quantità": "1"
