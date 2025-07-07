@@ -46,7 +46,7 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
                 "quantity": 1
             }
         },
-        "condition": "USED",
+        "condition": "USED_EXCELLENT",
         "conditionDescription": "Parte usata con segni di usura estetici, perfettamente funzionante. Controlla le foto per le condizioni esatte. / Used part with cosmetic wear, fully functional. Please check images for exact condition.",
         "product": {
             "title": title,
