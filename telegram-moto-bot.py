@@ -1,7 +1,10 @@
 import os
 import logging
 from telegram import Update
-from telegram.ext import (ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler)
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler, filters,
+    ContextTypes, ConversationHandler
+)
 from ebay_api import publish_item
 import tempfile
 import cloudinary
@@ -32,10 +35,17 @@ cloudinary.config(
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
+    context.user_data["session_active"] = True
     await update.message.reply_text(
         "Welcome! Please enter the motorcycle brand (e.g., Honda):"
     )
     return ASKING_BRAND
+
+async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
+    await update.message.reply_text("Session ended. To start a new session, type /start.")
+    return ConversationHandler.END
 
 async def handle_brand_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     brand = update.message.text.strip()
@@ -66,7 +76,7 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mpn"] = mpn
     context.user_data["image_urls"] = []
     await update.message.reply_text(
-        f"All parts will be associated with model: *{context.user_data['model']}* and year: *{context.user_data['year']}*\nMPN: *{mpn}*\n\nNow send one or more photos of the part (as regular photos or documents).",
+        f"Session started for model: *{context.user_data['model']}* year: *{context.user_data['year']}*\nMPN: *{mpn}*\n\nNow send photo(s) of the part.",
         parse_mode="Markdown"
     )
     return ASKING_PRICE
@@ -83,6 +93,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image_urls = context.user_data.get("image_urls", [])
     first_photo_path = None
 
+    cloudinary_ids = context.user_data.get("cloudinary_public_ids", [])
     for i, item in enumerate(files):
         file = await item.get_file()
         temp_path = f"temp_{update.message.from_user.id}_{i}.jpg"
@@ -91,10 +102,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             uploaded = cloudinary.uploader.upload(temp_path)
             hosted_url = uploaded["secure_url"]
+            cloudinary_ids.append(uploaded["public_id"])
             image_urls.append(hosted_url)
         except Exception as e:
             logger.error(f"Cloudinary upload failed: {e}")
-            await update.message.reply_text("Failed to upload image.")
             continue
         finally:
             try:
@@ -108,11 +119,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["image_urls"] = image_urls
 
-    # Пропустить повторный вызов OpenAI, если уже делали
     if context.user_data.get("ai_data_fetched"):
-        await update.message.reply_text("Photo(s) uploaded.")
+        if not context.user_data.get("photo_uploaded_once"):
+            await update.message.reply_text("Photo(s) uploaded.\nNow enter the price (e.g., 19.99):")
+            context.user_data["photo_uploaded_once"] = True
         return ASKING_PRICE
 
+    # AI processing (only once)
     ai_data = await analyze_motorcycle_part(
         image_url=image_urls[0],
         brand=context.user_data["brand"],
@@ -170,7 +183,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.warning(f"Failed to delete first photo file: {e}")
 
-
     context.user_data.update({
         "image_urls": image_urls,
         "title": title,
@@ -178,10 +190,12 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "color": ai_data["color"],
         "compatible_years": ai_data["compatible_years"],
         "part_type": ai_data["part_type"],
-        "ai_data_fetched": True
+        "ai_data_fetched": True,
+        "photo_uploaded_once": True,
+        "cloudinary_public_ids": cloudinary_ids
     })
 
-    await update.message.reply_text("Photo(s) uploaded.")
+    await update.message.reply_text("Photo(s) uploaded.\nNow enter the price (e.g., 19.99):")
     return ASKING_PRICE
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -221,117 +235,13 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     if context.application:
         await context.application.stop()
 
-def generate_motor_description(
-    brand: str,
-    model: str,
-    engine_type: str,
-    displacement: str,
-    bore_stroke: str,
-    compression_ratio: str,
-    max_power: str,
-    max_torque: str,
-    cooling: str,
-    fuel_system: str,
-    starter: str,
-    gearbox: str,
-    final_drive: str,
-    recommended_oil: str,
-    oil_capacity: str,
-    year: str,
-    compatible_years: str,
-    color: str,
-    mpn: str
-    ) -> str:
-    motor_description_template = """
-        Motore {brand}  {model} Usato (Completo)
+def generate_motor_description(**kwargs) -> str:
+    with open("templates/motor_description.html", encoding="utf-8") as f:
+        return f.read().format(**kwargs)
 
-        Caratteristiche tecniche:
-        • Tipo motore: {engine_type}
-        • Cilindrata: {displacement}
-        • Alesaggio × corsa: {bore_stroke}
-        • Rapporto di compressione: {compression_ratio}
-        • Potenza massima: {max_power}
-        • Coppia massima: {max_torque}
-        • Raffreddamento: {cooling}
-        • Alimentazione: {fuel_system}
-        • Avviamento: {starter}
-        • Cambio: {gearbox}
-        • Trasmissione finale: {final_drive}
-        • Olio consigliato: {recommended_oil}
-        • Capacità olio: {oil_capacity}
-        • Anno: {year}
-        • Anni compatibili: {compatible_years}
-        • Colore: {color}
-        • Codice (MPN): {mpn}
-
-        Il motore è usato, testato e perfettamente funzionante. Presenta normali segni di usura estetica.
-        Controlla attentamente le foto per verificare le condizioni reali del prodotto.
-
-        Spedizione veloce e sicura in tutta Italia, mondo.
-
-        Se il ricambio ricevuto risulta danneggiato durante la spedizione o non è funzionante,
-        provvederemo al rimborso completo oppure alla sostituzione con un pezzo equivalente, se disponibile.
-    """
-    return motor_description_template.format(
-        brand=brand,
-        model=model,
-        engine_type=engine_type,
-        displacement=displacement,
-        bore_stroke=bore_stroke,
-        compression_ratio=compression_ratio,
-        max_power=max_power,
-        max_torque=max_torque,
-        cooling=cooling,
-        fuel_system=fuel_system,
-        starter=starter,
-        gearbox=gearbox,
-        final_drive=final_drive,
-        recommended_oil=recommended_oil,
-        oil_capacity=oil_capacity,
-        year=year,
-        compatible_years=compatible_years,
-        color=color,
-        mpn=mpn
-    )
-
-def generate_part_description(
-        brand: str,
-        model: str,
-        year: str,
-        compatible_years: str,
-        part_type: str,
-        color: str,
-        mpn: str
-    ) -> str:
-    general_description_template = """\
-        Ricambio usato per moto – {brand} {model}
-
-        Dettagli:
-        • Compatibile con: {model}
-        • Anno: {year}
-        • Anno compatibile: {compatible_years}
-        • Tipo di pezzo: {part_type}
-        • Colore: {color}
-        • Codice/MPN: {mpn}
-
-        Parte originale usata, testata e perfettamente funzionante.
-        Presenta segni di usura compatibili con l’utilizzo.
-        Verifica le condizioni effettive tramite le foto allegate.
-
-        Spedizione veloce e sicura in tutta Italia, mondo.
-
-        Se il ricambio ricevuto risulta danneggiato durante la spedizione o non è funzionante,
-        provvederemo al rimborso completo oppure alla sostituzione con un pezzo equivalente, se disponibile.
-    """
-    return general_description_template.format(
-        brand=brand,
-        model=model,
-        year=year,
-        compatible_years=compatible_years,
-        part_type=part_type,
-        color=color,
-        mpn=mpn
-    )
+def generate_part_description(**kwargs) -> str:
+    with open("templates/part_description.html", encoding="utf-8") as f:
+        return f.read().format(**kwargs)
 
 def generate_motor_title(brand, model, compatible_years):
     return f"Motore {brand} {model} {compatible_years} Usato Funzionante"
@@ -429,6 +339,75 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
             "oil_capacity": "N/A"
         }
 
+async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = context.user_data
+    if not data.get("session_active"):
+        await update.message.reply_text("Session is not active. Start with /start.")
+        return
+
+    summary = (
+        f"*Current session:*\n"
+        f"• Brand: *{data.get('brand', '—')}*\n"
+        f"• Model: *{data.get('model', '—')}*\n"
+        f"• Year: *{data.get('year', '—')}*\n"
+        f"• MPN: *{data.get('mpn', '—')}*\n"
+    )
+    await update.message.reply_text(summary, parse_mode="Markdown")
+
+async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    help_text = (
+        "*Available commands:*\n"
+        "/start – Start a new session\n"
+        "/end – End the current session\n"
+        "/session – Show current session data\n"
+        "/help – Show this help message\n\n"
+        "To continue, send the command."
+    )
+    await update.message.reply_text(help_text, parse_mode="Markdown")
+
+async def unknown_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await show_help(update, context)
+
+async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_data = context.user_data
+
+    if "session_active" not in user_data:
+        await update.message.reply_text("No active session. Use /start to begin.")
+        return ConversationHandler.END
+
+    if "mpn" in user_data:
+        user_data.pop("mpn")
+        await update.message.reply_text("Returning to year input. Please re-enter the year:")
+        return ASKING_YEAR
+
+    if "year" in user_data:
+        user_data.pop("year")
+        await update.message.reply_text("Returning to model input. Please re-enter the model:")
+        return ASKING_MODEL
+
+    if "model" in user_data:
+        user_data.pop("model")
+        await update.message.reply_text("Returning to brand input. Please re-enter the brand:")
+        return ASKING_BRAND
+
+    if "image_urls" in user_data:
+        public_ids = user_data.get("cloudinary_public_ids", [])
+        for pid in public_ids:
+            try:
+                cloudinary.uploader.destroy(pid)
+            except Exception as e:
+                logger.warning(f"Failed to delete cloudinary image: {e}")
+
+        for key in ["image_urls", "title", "description", "color", "part_type",
+                    "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
+            user_data.pop(key, None)
+
+        await update.message.reply_text("Returning to photo upload. Please send photo(s) again:")
+        return ASKING_PRICE
+
+    await update.message.reply_text("Nothing to go back to.")
+    return ConversationHandler.END
+
 def main():
     token = TELEGRAM_TOKEN
     requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
@@ -448,10 +427,15 @@ def main():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)
             ]
         },
-        fallbacks=[]
+        fallbacks=[CommandHandler("end", end)]
     )
 
     app.add_handler(conv_handler)
+    app.add_handler(CommandHandler("end", end))
+    app.add_handler(CommandHandler("session", show_session_data))
+    app.add_handler(CommandHandler("help", show_help))
+    app.add_handler(CommandHandler("back", handle_back))
+    app.add_handler(MessageHandler(filters.ALL, unknown_input))
     app.add_error_handler(error_handler)
     app.run_polling()
 
