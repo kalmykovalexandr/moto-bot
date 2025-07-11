@@ -221,8 +221,13 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
 
     await update.message.reply_text(result)
-    context.user_data.clear()
-    return ConversationHandler.END
+
+    for key in ["image_urls", "title", "description", "color", "part_type",
+                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
+        context.user_data.pop(key, None)
+
+    await update.message.reply_text("Do you want to continue listing parts or end the session? Send /continue or /end")
+    return ASKING_PRICE
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
@@ -375,21 +380,6 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No active session. Use /start to begin.")
         return ConversationHandler.END
 
-    if "mpn" in user_data:
-        user_data.pop("mpn")
-        await update.message.reply_text("Returning to year input. Please re-enter the year:")
-        return ASKING_YEAR
-
-    if "year" in user_data:
-        user_data.pop("year")
-        await update.message.reply_text("Returning to model input. Please re-enter the model:")
-        return ASKING_MODEL
-
-    if "model" in user_data:
-        user_data.pop("model")
-        await update.message.reply_text("Returning to brand input. Please re-enter the brand:")
-        return ASKING_BRAND
-
     if "image_urls" in user_data:
         public_ids = user_data.get("cloudinary_public_ids", [])
         for pid in public_ids:
@@ -405,8 +395,27 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Returning to photo upload. Please send photo(s) again:")
         return ASKING_PRICE
 
+    if "mpn" in user_data:
+        user_data.pop("mpn")
+        await update.message.reply_text("Returning to year input. Please re-enter the year:")
+        return ASKING_YEAR
+
+    if "year" in user_data:
+        user_data.pop("year")
+        await update.message.reply_text("Returning to model input. Please re-enter the model:")
+        return ASKING_MODEL
+
+    if "model" in user_data:
+        user_data.pop("model")
+        await update.message.reply_text("Returning to brand input. Please re-enter the brand:")
+        return ASKING_BRAND
+
     await update.message.reply_text("Nothing to go back to.")
     return ConversationHandler.END
+
+async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Send photo(s) of the next part:")
+    return ASKING_PRICE
 
 def main():
     token = TELEGRAM_TOKEN
