@@ -444,6 +444,7 @@ def main():
     app.add_handler(CommandHandler("session", show_session_data))
     app.add_handler(CommandHandler("help", show_help))
     app.add_handler(CommandHandler("back", handle_back))
+    app.add_handler(CommandHandler("continue", handle_continue))
     app.add_handler(MessageHandler(filters.ALL, unknown_input))
     app.add_error_handler(error_handler)
     app.run_polling()
