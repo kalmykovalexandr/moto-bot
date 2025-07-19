@@ -52,7 +52,6 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
             "title": title,
             "description": description,
             "imageUrls": image_urls,
-            "subtitle": title[:55],
             "brand": brand,
             "mpn": mpn,
             "aspects": {
