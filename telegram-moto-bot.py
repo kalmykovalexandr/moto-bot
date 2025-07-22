@@ -86,6 +86,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.document:
         files.append(update.message.document)
 
+    logger.info(f"Received {len(files)} files from user {update.message.from_user.id}")
+
     if not files:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
