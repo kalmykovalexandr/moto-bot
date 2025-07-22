@@ -82,7 +82,7 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ASKING_PRICE
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    files = [max(photos, key=attrgetter('file_size')) for photos in update.message.photo]
+    files = [max(update.message.photo, key=lambda photo: photo.file_size)]
 
     logger.info(f"Processing {len(files)} photos for user {update.message.from_user.id}")
 
