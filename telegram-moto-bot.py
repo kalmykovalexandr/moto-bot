@@ -82,11 +82,9 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ASKING_PRICE
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    files = update.message.photo or []
-    if update.message.document:
-        files.append(update.message.document)
+    files = [photo[-1] for photo in update.message.photo]
 
-    logger.info(f"Received {len(files)} files from user {update.message.from_user.id}")
+    logger.info(f"Processing {len(files)} photos for user {update.message.from_user.id}")
 
     if not files:
         await update.message.reply_text("Please send a valid image file.")
