@@ -365,9 +365,11 @@ async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ASKING_PRICE
 
 def main():
-    requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/deleteWebhook")
+    token = TELEGRAM_TOKEN
+    requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
+
     request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).request(request).build()
+    app = ApplicationBuilder().token(token).request(request).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -380,9 +382,8 @@ def main():
                 MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)
             ],
-            ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
-            ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
-            }
+	    ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
+	    ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
         },
         fallbacks=[CommandHandler("end", end)]
     )
