@@ -1,250 +1,277 @@
 import os
 import logging
+import json
+import re
+from typing import Dict
+
+import requests
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, filters,
     ContextTypes, ConversationHandler
 )
-from ebay_api import publish_item
-import tempfile
-import cloudinary
-import cloudinary.uploader
 from telegram.request import HTTPXRequest
-import requests
+import cloudinary.uploader
 from openai import OpenAI
-import json
-import re
 
+from ebay_api import publish_item
+
+# Environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ASKING_BRAND = 0
-ASKING_MODEL = 1
-ASKING_YEAR = 2
-ASKING_MPN = 3
-ASKING_PRICE = 4
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Cloudinary configuration
 cloudinary.config(
     cloud_name="dczhgkjpa",
     api_key="838981728989476",
     api_secret="0qgudi-oz4c8KNRUFsk7lTsXX3M"
 )
 
+# Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Constants for conversation states
+ASKING_BRAND, ASKING_MODEL, ASKING_YEAR, ASKING_MPN, ASKING_PRICE, ASKING_CONFIRMATION, ASKING_DESCRIPTION = range(7)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     context.user_data["session_active"] = True
-    await update.message.reply_text(
-        "Welcome! Please enter the motorcycle brand (e.g., Honda):"
-    )
+    await update.message.reply_text("Welcome! Please enter the motorcycle brand (e.g., Honda):")
     return ASKING_BRAND
+
 
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     await update.message.reply_text("Session ended. To start a new session, type /start.")
     return ConversationHandler.END
 
+
 async def handle_brand_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    brand = update.message.text.strip()
-    context.user_data["brand"] = brand
-    await update.message.reply_text(
-        "Now enter the motorcycle model (e.g., Transalp 650):"
-    )
+    context.user_data["brand"] = update.message.text.strip()
+    await update.message.reply_text("Now enter the motorcycle model (e.g., Transalp 650):")
     return ASKING_MODEL
 
+
 async def handle_model_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    model = update.message.text.strip()
-    context.user_data["model"] = model
-    await update.message.reply_text(
-        "Now enter the year of the motorcycle (e.g., 1999):"
-    )
+    context.user_data["model"] = update.message.text.strip()
+    await update.message.reply_text("Now enter the year of the motorcycle (e.g., 1999):")
     return ASKING_YEAR
 
+
 async def handle_year_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    year = update.message.text.strip()
-    context.user_data["year"] = year
-    await update.message.reply_text(
-        "Now enter the MPN (Manufacturer Part Number) of the motorcycle part:"
-    )
+    context.user_data["year"] = update.message.text.strip()
+    await update.message.reply_text("Now enter the MPN (Manufacturer Part Number) of the motorcycle part:")
     return ASKING_MPN
 
+
 async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    mpn = update.message.text.strip()
-    context.user_data["mpn"] = mpn
+    context.user_data["mpn"] = update.message.text.strip()
     context.user_data["image_urls"] = []
     await update.message.reply_text(
-        f"Session started for model: *{context.user_data['model']}* year: *{context.user_data['year']}*\nMPN: *{mpn}*\n\nNow send photo(s) of the part.",
+        (f"Session started for moto: {context.user_data['brand']} - {context.user_data['model']} \n"
+         f"Year: {context.user_data['year']} \n"
+         f"MPN: {context.user_data['mpn']} \n\n"
+         "Now send photo(s) of the part."),
         parse_mode="Markdown"
     )
+
     return ASKING_PRICE
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    files = [max(update.message.photo, key=lambda photo: photo.file_size)]
-
-    logger.info(f"Processing {len(files)} photos for user {update.message.from_user.id}")
-
-    if not files:
+    if not update.message.photo:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
-    image_urls = context.user_data.get("image_urls", [])
-    first_photo_path = None
+    photo = max(update.message.photo, key=lambda photo: photo.file_size)
+    file = await photo.get_file()
+    temp_path = f"temp_{update.message.from_user.id}.jpg"
+    await file.download_to_drive(temp_path)
 
-    cloudinary_ids = context.user_data.get("cloudinary_public_ids", [])
-    for i, item in enumerate(files):
-        file = await item.get_file()
-        temp_path = f"temp_{update.message.from_user.id}_{i}.jpg"
-        await file.download_to_drive(temp_path)
+    try:
+        uploaded = cloudinary.uploader.upload(temp_path)
+        context.user_data["image_urls"].append(uploaded["secure_url"])
+        context.user_data.setdefault("cloudinary_public_ids", []).append(uploaded["public_id"])
+    except Exception as e:
+        logger.error(f"Cloudinary upload failed: {e}")
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
-        try:
-            uploaded = cloudinary.uploader.upload(temp_path)
-            hosted_url = uploaded["secure_url"]
-            cloudinary_ids.append(uploaded["public_id"])
-            image_urls.append(hosted_url)
-        except Exception as e:
-            logger.error(f"Cloudinary upload failed: {e}")
-            continue
-        finally:
-            try:
-                if i == 0:
-                    first_photo_path = temp_path
-                else:
-                    if os.path.exists(temp_path):
-                        os.remove(temp_path)
-            except Exception as e:
-                logger.warning(f"Failed to delete temp file: {e}")
-
-    context.user_data["image_urls"] = image_urls
-
-    if context.user_data.get("ai_data_fetched"):
-        if not context.user_data.get("photo_uploaded_once"):
-            await update.message.reply_text("Photo(s) uploaded.\nNow enter the price (e.g., 19.99):")
-            context.user_data["photo_uploaded_once"] = True
+    if "ai_data_fetched" in context.user_data and not context.user_data.get("photo_uploaded_once"):
+        await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
+        context.user_data["photo_uploaded_once"] = True
         return ASKING_PRICE
 
-    # AI processing (only once)
     ai_data = await analyze_motorcycle_part(
-        image_url=image_urls[0],
+        image_url=context.user_data["image_urls"][0],
         brand=context.user_data["brand"],
         model=context.user_data["model"],
         year=context.user_data["year"]
     )
 
-    if ai_data["is_motor"]:
-        title = generate_motor_title(
-            context.user_data["brand"],
-            context.user_data["model"],
-            ai_data["compatible_years"]
-        )
-        description = generate_motor_description(
-            brand=context.user_data["brand"],
-            model=context.user_data["model"],
-            engine_type=ai_data["engine_type"],
-            displacement=ai_data["displacement"],
-            bore_stroke=ai_data["bore_stroke"],
-            compression_ratio=ai_data["compression_ratio"],
-            max_power=ai_data["max_power"],
-            max_torque=ai_data["max_torque"],
-            cooling=ai_data["cooling"],
-            fuel_system=ai_data["fuel_system"],
-            starter=ai_data["starter"],
-            gearbox=ai_data["gearbox"],
-            final_drive=ai_data["final_drive"],
-            recommended_oil=ai_data["recommended_oil"],
-            oil_capacity=ai_data["oil_capacity"],
-            year=context.user_data["year"],
-            compatible_years=ai_data["compatible_years"],
-            color=ai_data["color"],
-            mpn=context.user_data["mpn"]
-        )
-    else:
-        title = generate_part_title(
-            ai_data["part_type"],
-            context.user_data["brand"],
-            context.user_data["model"],
-            ai_data["compatible_years"]
-        )
-        description = generate_part_description(
-            brand=context.user_data["brand"],
-            model=context.user_data["model"],
-            year=context.user_data["year"],
-            compatible_years=ai_data["compatible_years"],
-            part_type=ai_data["part_type"],
-            color=ai_data["color"],
-            mpn=context.user_data["mpn"]
-        )
-
-    if first_photo_path:
-        try:
-            os.remove(first_photo_path)
-        except Exception as e:
-            logger.warning(f"Failed to delete first photo file: {e}")
+    title, description = generate_listing_content(ai_data, context)
 
     context.user_data.update({
-        "image_urls": image_urls,
         "title": title,
         "description": description,
-        "color": ai_data["color"],
-        "compatible_years": ai_data["compatible_years"],
-        "part_type": ai_data["part_type"],
-        "ai_data_fetched": True,
-        "photo_uploaded_once": True,
-        "cloudinary_public_ids": cloudinary_ids
+        "color": ai_data.get("color", "N/A"),
+        "compatible_years": ai_data.get("compatible_years", "N/A"),
+        "part_type": ai_data.get("part_type", "N/A"),
+        "ai_data_fetched": True
     })
 
-    await update.message.reply_text("Photo(s) uploaded.\nNow enter the price (e.g., 19.99):")
-    return ASKING_PRICE
+    await update.message.reply_text(
+        (f"Generated Title: \n{context.user_data['title']}\n\n"
+         f"Generated Description:\n{context.user_data['description']}\n\n"
+         "If this is correct, please confirm by sending /yes. If not, send /no to provide your own description."),
+        parse_mode="Markdown"
+    )
+    return ASKING_CONFIRMATION
+
+async def handle_confirmation_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.text.strip().lower() == '/yes':
+        await update.message.reply_text("Great! Now enter the price (e.g., 19.99):")
+        return ASKING_PRICE
+
+    await update.message.reply_text("Please provide a brief description of the part:")
+    return ASKING_DESCRIPTION
+
+async def handle_description_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["user_description"] = update.message.text.strip()
+
+    ai_data = await analyze_motorcycle_part(
+        image_url=context.user_data["image_urls"][0],
+        brand=context.user_data["brand"],
+        model=context.user_data["model"],
+        year=context.user_data["year"]
+    )
+
+    title, description = generate_listing_content(ai_data, context)
+    context.user_data.update({"title": title, "description": description})
+
+    await update.message.reply_text(
+        (f"Updated Generated Title: \n{context.user_data['title']}\n\n"
+         f"Updated Generated Description:\n{context.user_data['description']}\n\n"
+         "If this is correct, please confirm by sending /yes. If not, send /no to provide another description."),
+        parse_mode="Markdown"
+    )
+    return ASKING_CONFIRMATION
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price_text = update.message.text
     try:
-        price = float(price_text)
+        price = float(update.message.text.strip())
     except ValueError:
         await update.message.reply_text("Invalid price. Please enter a numeric value like 19.99.")
         return ASKING_PRICE
 
     data = context.user_data
     result = publish_item(
-        title=context.user_data["title"],
-        description=context.user_data["description"],
+        title=data["title"],
+        description=data["description"],
         brand=data["brand"],
         model=data["model"],
         mpn=data["mpn"],
-        color=data["color"],
+        color=data.get("color", "N/A"),
         image_urls=data["image_urls"],
         price=price,
-        compatible_years=data["compatible_years"],
-        part_type=data["part_type"]
+        compatible_years=data.get("compatible_years", "N/A"),
+        part_type=data.get("part_type", "N/A")
     )
 
     await update.message.reply_text(result)
+    await conclude_listing_session(context)
+    return ConversationHandler.END
 
-    for key in ["image_urls", "title", "description", "color", "part_type",
-                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
-        context.user_data.pop(key, None)
+async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str):
+    prompt = (
+        f"Ты специалист по мотоциклам. Перед тобой фотография запчасти мотоцикла.\n"
+        f"Пользователь уже ввёл следующие данные:\n- Бренд: {brand}\n- Модель: {model}\n- Год: {year}\n"
+        "Твоя задача: по фото определить, что это за запчасть. Ответь в формате JSON с полями:\n"
+        "- is_motor (true/false)\n- part_type (string, на итальянском)\n"
+        "- color (string, на итальянском)\n- compatible_years (string, например \"1997–2000\")\n"
+        "Если это мотор, также добавь:\n"
+        "- engine_type\n- displacement\n- bore_stroke\n"
+        "- compression_ratio\n- max_power\n- max_torque\n- cooling\n"
+        "- fuel_system\n- starter\n- gearbox\n- final_drive\n"
+        "- recommended_oil\n- oil_capacity\n\n"
+        "Ответь ТОЛЬКО в формате JSON (не добавляй ничего другого, только JSON):\n"
+        "{\n  \"is_motor\": true/false,\n  \"part_type\": \"название на итальянском\",\n"
+        "  \"color\": \"цвет на итальянском\",\n  \"compatible_years\": \"например, 1999–2003\",\n"
+        "  \"engine_type\": \"...\",\n  \"displacement\": \"...\",\n  ...  \n}\n"
+        "Если что-то неизвестно — напиши \"N/A\".\n"
+    )
 
-    await update.message.reply_text("Do you want to continue listing parts or end the session? Send /continue or /end")
-    return ASKING_PRICE
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Ты технический специалист по мотоциклам."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000
+        )
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
-    if update and hasattr(update, "message"):
-        try:
-            await update.message.reply_text("An internal error occurred.")
-        except Exception:
-            pass
+        text = response.choices[0].message.content.strip()
+        json_match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not json_match:
+            logger.error("AI response is not JSON-formatted.")
+            return {}
 
-    if context.application:
-        await context.application.stop()
+        return json.loads(json_match.group())
+    except Exception as e:
+        logger.error(f"Failed to parse AI response: {e}")
+        return {"is_motor": False}
 
-def generate_motor_description(**kwargs) -> str:
+def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
+    if ai_data.get("is_motor"):
+        title = generate_motor_title(
+            context.user_data["brand"], context.user_data["model"], ai_data.get("compatible_years", "N/A")
+        )
+        description = generate_motor_description(
+            brand=context.user_data["brand"],
+            model=context.user_data["model"],
+            engine_type=ai_data.get("engine_type", "N/A"),
+            displacement=ai_data.get("displacement", "N/A"),
+            bore_stroke=ai_data.get("bore_stroke", "N/A"),
+            compression_ratio=ai_data.get("compression_ratio", "N/A"),
+            max_power=ai_data.get("max_power", "N/A"),
+            max_torque=ai_data.get("max_torque", "N/A"),
+            cooling=ai_data.get("cooling", "N/A"),
+            fuel_system=ai_data.get("fuel_system", "N/A"),
+            starter=ai_data.get("starter", "N/A"),
+            gearbox=ai_data.get("gearbox", "N/A"),
+            final_drive=ai_data.get("final_drive", "N/A"),
+            recommended_oil=ai_data.get("recommended_oil", "N/A"),
+            oil_capacity=ai_data.get("oil_capacity", "N/A"),
+            year=context.user_data["year"],
+            compatible_years=ai_data.get("compatible_years", "N/A"),
+            color=ai_data.get("color", "N/A"),
+            mpn=context.user_data["mpn"]
+        )
+    else:
+        title = generate_part_title(
+            ai_data.get("part_type", "N/A"), context.user_data["brand"], context.user_data["model"], ai_data.get("compatible_years", "N/A")
+        )
+        description = generate_part_description(
+            brand=context.user_data["brand"],
+            model=context.user_data["model"],
+            year=context.user_data["year"],
+            compatible_years=ai_data.get("compatible_years", "N/A"),
+            part_type=ai_data.get("part_type", "N/A"),
+            color=ai_data.get("color", "N/A"),
+            mpn=context.user_data["mpn"]
+        )
+    return title, description
+
+def generate_motor_description(**kwargs):
     with open("templates/motor_description.html", encoding="utf-8") as f:
         return f.read().format(**kwargs)
 
-def generate_part_description(**kwargs) -> str:
+def generate_part_description(**kwargs):
     with open("templates/part_description.html", encoding="utf-8") as f:
         return f.read().format(**kwargs)
 
@@ -254,95 +281,15 @@ def generate_motor_title(brand, model, compatible_years):
 def generate_part_title(part_type, brand, model, compatible_years):
     return f"{part_type} {brand} {model} {compatible_years} Usato Originale"
 
-async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str) -> dict:
-    prompt = f"""
-    Ты специалист по мотоциклам. Перед тобой фотография запчасти мотоцикла.
-    Пользователь уже ввёл следующие данные:
-    - Бренд: {brand}
-    - Модель: {model}
-    - Год: {year}
+async def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
+    for key in ["image_urls", "title", "description", "color", "part_type",
+                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
+        context.user_data.pop(key, None)
 
-    Твоя задача: по фото определить, что это за запчасть. Ответь в формате JSON с полями:
-    - is_motor (true/false)
-    - part_type (string, на итальянском)
-    - color (string, на итальянском)
-    - compatible_years (string, например "1997–2000")
-    Если это мотор, также добавь:
-    - engine_type
-    - displacement
-    - bore_stroke
-    - compression_ratio
-    - max_power
-    - max_torque
-    - cooling
-    - fuel_system
-    - starter
-    - gearbox
-    - final_drive
-    - recommended_oil
-    - oil_capacity
-
-    Ответь ТОЛЬКО в формате JSON (не добавляй ничего другого, только JSON):
-    {{
-      "is_motor": true/false,
-      "part_type": "название на итальянском",
-      "color": "цвет на итальянском",
-      "compatible_years": "например, 1999–2003",
-      "engine_type": "...",
-      "displacement": "...",
-      ...
-    }}
-
-    Если что-то неизвестно — напиши "N/A".
-    """
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Ты технический специалист по мотоциклам."},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}}
-                    ]
-                }
-            ],
-            max_tokens=1000
-        )
-
-        text = response.choices[0].message.content.strip()
-        print(f"[DEBUG] AI Response: {text}")
-
-        json_match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not json_match:
-            logger.error("AI response is not JSON-formatted.")
-            return fallback_data()
-
-        return json.loads(json_match.group())
-
-    except Exception as e:
-        logger.error(f"Failed to parse AI response: {e}")
-        return {
-            "is_motor": False,
-            "part_type": "N/A",
-            "color": "N/A",
-            "compatible_years": "N/A",
-            "engine_type": "N/A",
-            "displacement": "N/A",
-            "bore_stroke": "N/A",
-            "compression_ratio": "N/A",
-            "max_power": "N/A",
-            "max_torque": "N/A",
-            "cooling": "N/A",
-            "fuel_system": "N/A",
-            "starter": "N/A",
-            "gearbox": "N/A",
-            "final_drive": "N/A",
-            "recommended_oil": "N/A",
-            "oil_capacity": "N/A"
-        }
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
+    if isinstance(update, Update) and update.message:
+        await update.message.reply_text("An internal error occurred.")
 
 async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = context.user_data
@@ -361,7 +308,7 @@ async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
-        "*Available commands:*\n"
+        "Available commands:\n"
         "/start – Start a new session\n"
         "/end – End the current session\n"
         "/session – Show current session data\n"
@@ -418,11 +365,9 @@ async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ASKING_PRICE
 
 def main():
-    token = TELEGRAM_TOKEN
-    requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
-
+    requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/deleteWebhook")
     request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
-    app = ApplicationBuilder().token(token).request(request).build()
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).request(request).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -434,7 +379,10 @@ def main():
             ASKING_PRICE: [
                 MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)
-            ]
+            ],
+            ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
+            ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
+            }
         },
         fallbacks=[CommandHandler("end", end)]
     )
