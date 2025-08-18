@@ -11,12 +11,15 @@ logger = logging.getLogger(__name__)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str):
+async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str, max_part_len: int = 30):
     prompt = (
         f"You are a motorcycle specialist. In front of you is a photo of a motorcycle part.\n"
         f"The user has already provided the following information:\n- Brand: {brand}\n- Model: {model}\n- Year: {year}\n"
         "Your task: identify the part from the photo. Respond in JSON format with the following fields:\n"
-        "- is_motor (true/false)\n- part_type (string, in Italian)\n"
+        "- is_motor (true/false)\n"
+        "- part_type (string, in Italian)\n"
+        "- part_type_short (string, in Italian) = a concise name for the eBay title, "
+        f"no brand/model/year, no articles, abbreviations allowed, MAX {max_part_len} characters\n"
         "- color (string, in Italian)\n- compatible_years (string, e.g., \"1997–2000\")\n"
         "If it is an engine, also include:\n"
         "- engine_type\n- displacement\n- bore_stroke\n"

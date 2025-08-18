@@ -89,9 +89,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    if context.user_data.get("ai_data_fetched") and not context.user_data.get("photo_uploaded_once"):
-        await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
-        context.user_data["photo_uploaded_once"] = True
+    if context.user_data.get("ai_data_fetched"):
         return ASKING_PRICE
 
     ai_data = await analyze_motorcycle_part(
@@ -113,7 +111,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     })
 
     await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
+    context.user_data["photo_uploaded_once"] = True
     return ASKING_PRICE
+
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -139,7 +139,6 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(result)
 
     if not str(result).startswith("Successfully published"):
-        await update.message.reply_text("Please fix the issue above or try another price/photo.")
         return ASKING_PRICE
 
     try:
@@ -187,9 +186,12 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
             mpn=context.user_data["mpn"]
         )
     else:
+        part_for_title = ai_data.get("part_type_short") or ai_data.get("part_type", "N/A")
         title = generate_part_title(
-            ai_data.get("part_type", "N/A"), context.user_data["brand"], context.user_data["model"],
-            ai_data.get("compatible_years", "N/A")
+            part_for_title,
+            context.user_data["brand"],
+            context.user_data["model"],
+            ai_data.get("compatible_years", "N/A"),
         )
         description = generate_part_description(
             brand=context.user_data["brand"],
