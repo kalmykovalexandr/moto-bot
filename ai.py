@@ -1,14 +1,14 @@
-from openai import OpenAI
-from config import OPENAI_API_KEY
-import logging
 import json
+import logging
+import os
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str, max_part_len: int = 30):
@@ -46,10 +46,7 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
             response_format={"type": "json_object"},
             max_tokens=800,
         )
-
         text = resp.choices[0].message.content.strip()
-        logger.info(resp)
-
         return json.loads(text)
     except Exception as e:
         logger.error(f"Failed to parse AI response: {e}", exc_info=True)

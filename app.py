@@ -1,22 +1,18 @@
 import os
-from flask import Flask, request, jsonify
-import requests, base64
-from urllib.parse import unquote
 import uuid
+from urllib.parse import unquote
+
+import base64
+import requests
+from flask import Flask, request, jsonify
+
+from config import MARKETPLACE_ID, MERCHANT_LOCATION_KEY
 
 app = Flask(__name__)
 
-CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
-CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
-REDIRECT_URI = 'https://web-production-bfa68.up.railway.app/callback'
-SCOPES = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
-RUNAME = 'Oleksandr_Kalmy-Oleksand-Produc-jhxqqwktz'
-
-# Required for offer creation
-MARKETPLACE_ID = "EBAY_IT"
-FULFILLMENT_POLICY_ID = 294952595011
-PAYMENT_POLICY_ID = 294966878011
-RETURN_POLICY_ID = 294966928011
+EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
+EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 @app.route("/")
 def home():
@@ -29,7 +25,7 @@ def callback():
         return "Missing authorization code", 400
 
     code = unquote(raw_code)
-    auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -59,8 +55,8 @@ def callback():
         return f"Error fetching token: {response.text}", 400
 
 def get_access_token():
-    refresh_token = os.environ["REFRESH_TOKEN"]
-    auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    refresh_token = os.environ["EBAY_REFRESH_TOKEN"]
+    auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {auth}"
@@ -150,7 +146,7 @@ def publish():
         },
         "quantityLimitPerBuyer": 1,
         "includeCatalogProductDetails": True,
-        "merchantLocationKey": "sezze-warehouse"
+        "merchantLocationKey": MERCHANT_LOCATION_KEY
     }
 
     offer = requests.post("https://api.ebay.com/sell/inventory/v1/offer", headers=headers, json=offer_payload)
@@ -178,7 +174,7 @@ def create_location():
         "Content-Type": "application/json"
     }
 
-    location_key = "sezze-warehouse"
+    location_key = MERCHANT_LOCATION_KEY
     url = f"https://api.ebay.com/sell/inventory/v1/location/{location_key}"
 
     payload = {

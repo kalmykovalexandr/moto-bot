@@ -1,19 +1,17 @@
+import base64
 import os
 import uuid
-import base64
+
 import requests
 
-CLIENT_ID = 'Oleksand-Producti-PRD-c8e9abf40-17570312'
-CLIENT_SECRET = 'PRD-8e9abf40dced-24f3-4a83-863b-c761'
-MARKETPLACE_ID = "EBAY_IT"
-MERCHANT_LOCATION_KEY = "sezze-warehouse"
-FULFILLMENT_POLICY_ID = 294952595011
-PAYMENT_POLICY_ID = 294966878011
-RETURN_POLICY_ID = 294966928011
+from config import FULFILLMENT_POLICY_ID, PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
+
+EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
+EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
 
 def get_access_token():
     refresh_token = os.environ["REFRESH_TOKEN"]
-    auth = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {auth}"

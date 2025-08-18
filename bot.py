@@ -1,13 +1,15 @@
+import os
+
 import requests
 from telegram.ext import ApplicationBuilder
 
-from config import TELEGRAM_TOKEN
 from handlers import create_conv_handler, register_handlers, error_handler
 
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 def main():
-    requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/deleteWebhook")
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    requests.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteWebhook")
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     conversation_handler = create_conv_handler()
 
     register_handlers(app, conversation_handler)
