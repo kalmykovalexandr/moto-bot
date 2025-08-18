@@ -305,7 +305,7 @@ def create_conv_handler():
 
 
 def register_handlers(app, create_conv_handler):
-    app.add_handler(create_conv_handler())
+    app.add_handler(create_conv_handler)
     app.add_handler(CommandHandler("end", end))
     app.add_handler(CommandHandler("session", show_session_data))
     app.add_handler(CommandHandler("help", show_help))
