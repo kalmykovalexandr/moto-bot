@@ -1,41 +1,23 @@
-import os
 import logging
-import json
-import re
+import os
 from typing import Dict
 
-import requests
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler, filters,
+    CommandHandler, MessageHandler, filters,
     ContextTypes, ConversationHandler
 )
-from telegram.request import HTTPXRequest
-import cloudinary.uploader
-from openai import OpenAI
 
+from ai import analyze_motorcycle_part
+from cloudinary_utils import upload_image, delete_image
 from ebay_api import publish_item
+from utils import *
 
-# Environment variables
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Cloudinary configuration
-cloudinary.config(
-    cloud_name="dczhgkjpa",
-    api_key="838981728989476",
-    api_secret="0qgudi-oz4c8KNRUFsk7lTsXX3M"
-)
-
-# Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Constants for conversation states
 ASKING_BRAND, ASKING_MODEL, ASKING_YEAR, ASKING_MPN, ASKING_PRICE, ASKING_CONFIRMATION, ASKING_DESCRIPTION = range(7)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
@@ -81,8 +63,20 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return ASKING_PRICE
 
+
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message.photo:
+    # Check if there is a photo in the message
+    if update.message.photo:
+        # Retrieve the largest photo size
+        photo_file = update.message.photo[-1].file_id
+
+        # Optional: You can download the photo or do something else with it here
+        # photo = await context.bot.get_file(photo_file)
+        # await photo.download("your_local_path.png")  # Download the file locally if needed
+
+        await update.message.reply_text("Photo received successfully.")
+        return ASKING_PRICE
+    else:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
@@ -92,7 +86,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await file.download_to_drive(temp_path)
 
     try:
-        uploaded = cloudinary.uploader.upload(temp_path)
+        uploaded = upload_image(temp_path)
         context.user_data["image_urls"].append(uploaded["secure_url"])
         context.user_data.setdefault("cloudinary_public_ids", []).append(uploaded["public_id"])
     except Exception as e:
@@ -132,6 +126,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ASKING_CONFIRMATION
 
+
 async def handle_confirmation_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text.strip().lower() == '/yes':
         await update.message.reply_text("Great! Now enter the price (e.g., 19.99):")
@@ -139,6 +134,7 @@ async def handle_confirmation_input(update: Update, context: ContextTypes.DEFAUL
 
     await update.message.reply_text("Please provide a brief description of the part:")
     return ASKING_DESCRIPTION
+
 
 async def handle_description_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["user_description"] = update.message.text.strip()
@@ -160,6 +156,7 @@ async def handle_description_input(update: Update, context: ContextTypes.DEFAULT
         parse_mode="Markdown"
     )
     return ASKING_CONFIRMATION
+
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -186,45 +183,12 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await conclude_listing_session(context)
     return ConversationHandler.END
 
-async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str):
-    prompt = (
-        f"Ты специалист по мотоциклам. Перед тобой фотография запчасти мотоцикла.\n"
-        f"Пользователь уже ввёл следующие данные:\n- Бренд: {brand}\n- Модель: {model}\n- Год: {year}\n"
-        "Твоя задача: по фото определить, что это за запчасть. Ответь в формате JSON с полями:\n"
-        "- is_motor (true/false)\n- part_type (string, на итальянском)\n"
-        "- color (string, на итальянском)\n- compatible_years (string, например \"1997–2000\")\n"
-        "Если это мотор, также добавь:\n"
-        "- engine_type\n- displacement\n- bore_stroke\n"
-        "- compression_ratio\n- max_power\n- max_torque\n- cooling\n"
-        "- fuel_system\n- starter\n- gearbox\n- final_drive\n"
-        "- recommended_oil\n- oil_capacity\n\n"
-        "Ответь ТОЛЬКО в формате JSON (не добавляй ничего другого, только JSON):\n"
-        "{\n  \"is_motor\": true/false,\n  \"part_type\": \"название на итальянском\",\n"
-        "  \"color\": \"цвет на итальянском\",\n  \"compatible_years\": \"например, 1999–2003\",\n"
-        "  \"engine_type\": \"...\",\n  \"displacement\": \"...\",\n  ...  \n}\n"
-        "Если что-то неизвестно — напиши \"N/A\".\n"
-    )
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Ты технический специалист по мотоциклам."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000
-        )
+async def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
+    for key in ["image_urls", "title", "description", "color", "part_type",
+                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
+        context.user_data.pop(key, None)
 
-        text = response.choices[0].message.content.strip()
-        json_match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not json_match:
-            logger.error("AI response is not JSON-formatted.")
-            return {}
-
-        return json.loads(json_match.group())
-    except Exception as e:
-        logger.error(f"Failed to parse AI response: {e}")
-        return {"is_motor": False}
 
 def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
     if ai_data.get("is_motor"):
@@ -254,7 +218,8 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         title = generate_part_title(
-            ai_data.get("part_type", "N/A"), context.user_data["brand"], context.user_data["model"], ai_data.get("compatible_years", "N/A")
+            ai_data.get("part_type", "N/A"), context.user_data["brand"], context.user_data["model"],
+            ai_data.get("compatible_years", "N/A")
         )
         description = generate_part_description(
             brand=context.user_data["brand"],
@@ -267,29 +232,12 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         )
     return title, description
 
-def generate_motor_description(**kwargs):
-    with open("templates/motor_description.html", encoding="utf-8") as f:
-        return f.read().format(**kwargs)
-
-def generate_part_description(**kwargs):
-    with open("templates/part_description.html", encoding="utf-8") as f:
-        return f.read().format(**kwargs)
-
-def generate_motor_title(brand, model, compatible_years):
-    return f"Motore {brand} {model} {compatible_years} Usato Funzionante"
-
-def generate_part_title(part_type, brand, model, compatible_years):
-    return f"{part_type} {brand} {model} {compatible_years} Usato Originale"
-
-async def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
-    for key in ["image_urls", "title", "description", "color", "part_type",
-                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
-        context.user_data.pop(key, None)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Exception while handling an update: {context.error}", exc_info=True)
     if isinstance(update, Update) and update.message:
         await update.message.reply_text("An internal error occurred.")
+
 
 async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = context.user_data
@@ -306,6 +254,7 @@ async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(summary, parse_mode="Markdown")
 
+
 async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "Available commands:\n"
@@ -317,8 +266,10 @@ async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
+
 async def unknown_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_help(update, context)
+
 
 async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data
@@ -331,7 +282,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         public_ids = user_data.get("cloudinary_public_ids", [])
         for pid in public_ids:
             try:
-                cloudinary.uploader.destroy(pid)
+                delete_image(pid)
             except Exception as e:
                 logger.warning(f"Failed to delete cloudinary image: {e}")
 
@@ -360,18 +311,14 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Nothing to go back to.")
     return ConversationHandler.END
 
+
 async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Send photo(s) of the next part:")
     return ASKING_PRICE
 
-def main():
-    token = TELEGRAM_TOKEN
-    requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
 
-    request = HTTPXRequest(connect_timeout=10.0, read_timeout=10.0)
-    app = ApplicationBuilder().token(token).request(request).build()
-
-    conv_handler = ConversationHandler(
+def create_conv_handler():
+    return ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
             ASKING_BRAND: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_brand_input)],
@@ -382,21 +329,18 @@ def main():
                 MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)
             ],
-	    ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
-	    ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
+            ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
+            ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
         },
         fallbacks=[CommandHandler("end", end)]
     )
 
-    app.add_handler(conv_handler)
+
+def register_handlers(app, create_conv_handler):
+    app.add_handler(create_conv_handler)
     app.add_handler(CommandHandler("end", end))
     app.add_handler(CommandHandler("session", show_session_data))
     app.add_handler(CommandHandler("help", show_help))
     app.add_handler(CommandHandler("back", handle_back))
     app.add_handler(CommandHandler("continue", handle_continue))
     app.add_handler(MessageHandler(filters.ALL, unknown_input))
-    app.add_error_handler(error_handler)
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
