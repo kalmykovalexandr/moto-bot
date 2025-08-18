@@ -47,6 +47,9 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
 
         text = response.choices[0].message.content.strip()
         json_match = re.search(r"\{.*}", text, re.DOTALL)
+
+        logger.info(response)
+
         if not json_match:
             logger.error("AI response is not JSON-formatted.")
             return {}
