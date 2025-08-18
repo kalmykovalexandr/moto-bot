@@ -133,13 +133,17 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
 
     await update.message.reply_text(result)
-    await conclude_listing_session(context)
+
+    try:
+        await conclude_listing_session(context)
+    except Exception as e:
+        logger.error(f"conclude_listing_session failed: {e}")
 
     await update.message.reply_text("Do you want to list another part? Send photos now or /end to finish.")
     return ASKING_PRICE
 
 
-async def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
+def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
     for key in ["image_urls", "title", "description", "color", "part_type",
                 "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
         context.user_data.pop(key, None)
@@ -267,7 +271,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def handle_continue(update: Update):
+async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Send photo(s) of the next part:")
     return ASKING_PRICE
 
