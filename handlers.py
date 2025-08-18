@@ -134,7 +134,9 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     await update.message.reply_text(result)
     await conclude_listing_session(context)
-    return ConversationHandler.END
+
+    await update.message.reply_text("Do you want to list another part? Send photos now or /end to finish.")
+    return ASKING_PRICE
 
 
 async def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
