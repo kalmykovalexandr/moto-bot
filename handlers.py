@@ -65,18 +65,7 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Check if there is a photo in the message
-    if update.message.photo:
-        # Retrieve the largest photo size
-        photo_file = update.message.photo[-1].file_id
-
-        # Optional: You can download the photo or do something else with it here
-        # photo = await context.bot.get_file(photo_file)
-        # await photo.download("your_local_path.png")  # Download the file locally if needed
-
-        await update.message.reply_text("Photo received successfully.")
-        return ASKING_PRICE
-    else:
+    if not update.message.photo:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
