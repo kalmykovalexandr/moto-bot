@@ -26,7 +26,9 @@ def get_access_token() -> str:
     client_id = _require_env("EBAY_CLIENT_ID")
     client_secret = _require_env("EBAY_CLIENT_SECRET")
 
-    # читаем и старое имя на всякий случай
+    print("DEBUG EBAY_CLIENT_ID =", os.getenv("EBAY_CLIENT_ID"))
+    print("DEBUG EBAY_CLIENT_ID =", os.getenv("EBAY_CLIENT_SECRET"))
+
     refresh_token = os.getenv("EBAY_REFRESH_TOKEN") or os.getenv("REFRESH_TOKEN")
     if not refresh_token:
         raise RuntimeError("Missing env var: EBAY_REFRESH_TOKEN (or REFRESH_TOKEN)")
@@ -49,7 +51,6 @@ def get_access_token() -> str:
     if r.status_code == 200:
         return r.json()["access_token"]
 
-    # Улучшаем диагностику
     tail_id = client_id[-4:] if len(client_id) >= 4 else client_id
     raise Exception(
         "Failed to get access token: "
