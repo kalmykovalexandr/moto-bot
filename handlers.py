@@ -16,7 +16,7 @@ from utils import *
 logger = logging.getLogger(__name__)
 
 # Constants for conversation states
-ASKING_BRAND, ASKING_MODEL, ASKING_YEAR, ASKING_MPN, ASKING_PRICE, ASKING_CONFIRMATION, ASKING_DESCRIPTION = range(7)
+ASKING_BRAND, ASKING_MODEL, ASKING_YEAR, ASKING_MPN, ASKING_PRICE = range(5)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -107,44 +107,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "ai_data_fetched": True
     })
 
-    await update.message.reply_text(
-        (f"Generated Title: \n{context.user_data['title']}\n\n"
-         f"Generated Description:\n{context.user_data['description']}\n\n"
-         "If this is correct, please confirm by sending /yes. If not, send /no to provide your own description."),
-        parse_mode="Markdown"
-    )
-    return ASKING_CONFIRMATION
-
-
-async def handle_confirmation_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.text.strip().lower() == '/yes':
-        await update.message.reply_text("Great! Now enter the price (e.g., 19.99):")
-        return ASKING_PRICE
-
-    await update.message.reply_text("Please provide a brief description of the part:")
-    return ASKING_DESCRIPTION
-
-
-async def handle_description_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["user_description"] = update.message.text.strip()
-
-    ai_data = await analyze_motorcycle_part(
-        image_url=context.user_data["image_urls"][0],
-        brand=context.user_data["brand"],
-        model=context.user_data["model"],
-        year=context.user_data["year"]
-    )
-
-    title, description = generate_listing_content(ai_data, context)
-    context.user_data.update({"title": title, "description": description})
-
-    await update.message.reply_text(
-        (f"Updated Generated Title: \n{context.user_data['title']}\n\n"
-         f"Updated Generated Description:\n{context.user_data['description']}\n\n"
-         "If this is correct, please confirm by sending /yes. If not, send /no to provide another description."),
-        parse_mode="Markdown"
-    )
-    return ASKING_CONFIRMATION
+    await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
+    return ASKING_PRICE
 
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -301,7 +265,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_continue(update: Update):
     await update.message.reply_text("Send photo(s) of the next part:")
     return ASKING_PRICE
 
@@ -317,9 +281,7 @@ def create_conv_handler():
             ASKING_PRICE: [
                 MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_price_input)
-            ],
-            ASKING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confirmation_input)],
-            ASKING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description_input)]
+            ]
         },
         fallbacks=[CommandHandler("end", end)]
     )
