@@ -1,12 +1,7 @@
 from openai import OpenAI
 from config import OPENAI_API_KEY
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionUserMessageParam,
-    ChatCompletionSystemMessageParam,
-)
 import logging
 import json
-import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,33 +23,31 @@ async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: 
         "- compression_ratio\n- max_power\n- max_torque\n- cooling\n"
         "- fuel_system\n- starter\n- gearbox\n- final_drive\n"
         "- recommended_oil\n- oil_capacity\n\n"
-        "Respond ONLY in JSON format (do not add anything else, only JSON):\n"
-        "{\n  \"is_motor\": true/false,\n  \"part_type\": \"name in Italian\",\n"
-        "  \"color\": \"color in Italian\",\n  \"compatible_years\": \"e.g., 1999–2003\",\n"
-        "  \"engine_type\": \"...\",\n  \"displacement\": \"...\",\n  ...  \n}\n"
+        "Respond ONLY in JSON format (do not add anything else, only JSON).\n"
         "If something is unknown, write \"N/A\".\n"
     )
 
     try:
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                ChatCompletionSystemMessageParam(role="system", content="You are a motorcycle specialist."),
-                ChatCompletionUserMessageParam(role="user", content=f"{prompt}\nHere is an image: {image_url}")
+                {"role": "system", "content": "You are a motorcycle specialist."},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                },
             ],
-            max_tokens=1000
+            response_format={"type": "json_object"},
+            max_tokens=800,
         )
 
-        text = response.choices[0].message.content.strip()
-        json_match = re.search(r"\{.*}", text, re.DOTALL)
+        text = resp.choices[0].message.content.strip()
+        logger.info(resp)
 
-        logger.info(response)
-
-        if not json_match:
-            logger.error("AI response is not JSON-formatted.")
-            return {}
-
-        return json.loads(json_match.group())
+        return json.loads(text)
     except Exception as e:
-        logger.error(f"Failed to parse AI response: {e}")
+        logger.error(f"Failed to parse AI response: {e}", exc_info=True)
         return {"is_motor": False}
