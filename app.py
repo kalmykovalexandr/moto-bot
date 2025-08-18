@@ -1,18 +1,13 @@
-import os
+import base64
 import uuid
 from urllib.parse import unquote
 
-import base64
 import requests
 from flask import Flask, request, jsonify
 
-from config import MARKETPLACE_ID, MERCHANT_LOCATION_KEY
+from config import *
 
 app = Flask(__name__)
-
-EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
-EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 @app.route("/")
 def home():

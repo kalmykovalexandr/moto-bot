@@ -1,18 +1,12 @@
-import os
-
 import cloudinary.uploader
 
-# Cloudinary configuration
-# cloudinary.config(
-#     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-#     api_key=os.getenv("CLOUDINARY_API_KEY"),
-#     api_secret=os.getenv("CLOUDINARY_API_SECRET")
-# )
+from config import *
 
+# Cloudinary configuration
 cloudinary.config(
-    cloud_name="djzcaugul",
-    api_key="973924154917292",
-    api_secret="tiYTBhu78EXnkQLXqUi-0sR_uUc"
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET
 )
 
 def upload_image(temp_path):

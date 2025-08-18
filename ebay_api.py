@@ -1,14 +1,10 @@
 import base64
-import os
 import uuid
 
 import requests
+from config import *
 
 from config import FULFILLMENT_POLICY_ID, PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
-
-EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
-EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
-EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
 
 def get_access_token():
     auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
