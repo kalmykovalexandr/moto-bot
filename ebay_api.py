@@ -6,27 +6,56 @@ import requests
 
 from config import FULFILLMENT_POLICY_ID, PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
 
+EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
 EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
+REQUIRED_SCOPES = " ".join([
+    "https://api.ebay.com/oauth/api_scope/sell.inventory",
+    "https://api.ebay.com/oauth/api_scope/sell.account",
+    "https://api.ebay.com/oauth/api_scope"  # общий
+])
 
-def get_access_token():
-    refresh_token = os.environ["REFRESH_TOKEN"]
-    auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
+
+def _require_env(name: str) -> str:
+    v = os.getenv(name)
+    if not v:
+        raise RuntimeError(f"Missing env var: {name}")
+    return v.strip()
+
+def get_access_token() -> str:
+    client_id = _require_env("EBAY_CLIENT_ID")
+    client_secret = _require_env("EBAY_CLIENT_SECRET")
+
+    # читаем и старое имя на всякий случай
+    refresh_token = os.getenv("EBAY_REFRESH_TOKEN") or os.getenv("REFRESH_TOKEN")
+    if not refresh_token:
+        raise RuntimeError("Missing env var: EBAY_REFRESH_TOKEN (or REFRESH_TOKEN)")
+    refresh_token = refresh_token.strip()
+
+    basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
+
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f"Basic {auth}"
+        "Authorization": f"Basic {basic}",
+        "Accept": "application/json",
     }
     data = {
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
-        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
+        "scope": REQUIRED_SCOPES,
     }
 
-    r = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
+    r = requests.post(EBAY_TOKEN_URL, headers=headers, data=data, timeout=20)
     if r.status_code == 200:
         return r.json()["access_token"]
-    else:
-        raise Exception(f"Failed to get access token: {r.text}")
+
+    # Улучшаем диагностику
+    tail_id = client_id[-4:] if len(client_id) >= 4 else client_id
+    raise Exception(
+        "Failed to get access token: "
+        f"status={r.status_code}, body={r.text}, "
+        f"client_id_endswith={tail_id}"
+    )
 
 def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type):
     access_token = get_access_token()
