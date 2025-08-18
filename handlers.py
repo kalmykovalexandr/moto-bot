@@ -303,7 +303,6 @@ def create_conv_handler():
         fallbacks=[CommandHandler("end", end)]
     )
 
-
 def register_handlers(app, create_conv_handler):
     app.add_handler(create_conv_handler)
     app.add_handler(CommandHandler("end", end))
