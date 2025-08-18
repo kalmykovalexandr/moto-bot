@@ -65,11 +65,14 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.setdefault("image_urls", [])
+    context.user_data.setdefault("cloudinary_public_ids", [])
+
     if not update.message.photo:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
-    photo = max(update.message.photo, key=lambda photo: photo.file_size)
+    photo = max(update.message.photo, key=lambda p: p.file_size)
     file = await photo.get_file()
     temp_path = f"temp_{update.message.from_user.id}.jpg"
     await file.download_to_drive(temp_path)
@@ -77,14 +80,16 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         uploaded = upload_image(temp_path)
         context.user_data["image_urls"].append(uploaded["secure_url"])
-        context.user_data.setdefault("cloudinary_public_ids", []).append(uploaded["public_id"])
+        context.user_data["cloudinary_public_ids"].append(uploaded["public_id"])
     except Exception as e:
         logger.error(f"Cloudinary upload failed: {e}")
+        await update.message.reply_text("Couldn't upload the photo. Please try again.")
+        return ASKING_PRICE
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    if "ai_data_fetched" in context.user_data and not context.user_data.get("photo_uploaded_once"):
+    if context.user_data.get("ai_data_fetched") and not context.user_data.get("photo_uploaded_once"):
         await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
         context.user_data["photo_uploaded_once"] = True
         return ASKING_PRICE
@@ -110,7 +115,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
     return ASKING_PRICE
 
-
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         price = float(update.message.text.strip())
@@ -134,8 +138,12 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     await update.message.reply_text(result)
 
+    if not str(result).startswith("Successfully published"):
+        await update.message.reply_text("Please fix the issue above or try another price/photo.")
+        return ASKING_PRICE
+
     try:
-        await conclude_listing_session(context)
+        conclude_listing_session(context)
     except Exception as e:
         logger.error(f"conclude_listing_session failed: {e}")
 
@@ -144,8 +152,11 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
-    for key in ["image_urls", "title", "description", "color", "part_type",
-                "compatible_years", "ai_data_fetched", "photo_uploaded_once", "cloudinary_public_ids"]:
+    for key in [
+        "image_urls", "title", "description", "color", "part_type",
+        "compatible_years", "ai_data_fetched", "photo_uploaded_once",
+        "cloudinary_public_ids"
+    ]:
         context.user_data.pop(key, None)
 
 
@@ -294,7 +305,7 @@ def create_conv_handler():
 
 
 def register_handlers(app, create_conv_handler):
-    app.add_handler(create_conv_handler)
+    app.add_handler(create_conv_handler())
     app.add_handler(CommandHandler("end", end))
     app.add_handler(CommandHandler("session", show_session_data))
     app.add_handler(CommandHandler("help", show_help))
