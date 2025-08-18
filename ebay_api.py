@@ -11,7 +11,6 @@ EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
 EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
 
 def get_access_token():
-    refresh_token = os.environ["REFRESH_TOKEN"]
     auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -19,7 +18,7 @@ def get_access_token():
     }
     data = {
         "grant_type": "refresh_token",
-        "refresh_token": refresh_token,
+        "refresh_token": EBAY_REFRESH_TOKEN,
         "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
     }
 
