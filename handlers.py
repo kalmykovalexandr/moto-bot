@@ -8,9 +8,10 @@ from telegram.ext import (
     ContextTypes, ConversationHandler
 )
 
-from ai import analyze_motorcycle_part
+from ai_helper import analyze_motorcycle_part
 from cloudinary_utils import upload_image, delete_image
 from ebay_api import publish_item
+from shipping import pick_policy_by_weight_class, pick_weight_class_by_kg
 from utils import *
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,19 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         year=context.user_data["year"]
     )
 
+    est_kg = ai_data.get("estimated_weight_kg")
+    wc_ai = (ai_data.get("weight_class") or "").upper()
+
+    weight_class = wc_ai if wc_ai in ("XS", "S", "M", "L", "XL") else pick_weight_class_by_kg(est_kg)
+
+    chosen_policy_id = pick_policy_by_weight_class(weight_class)
+
+    context.user_data.update({
+        "weight_class": weight_class,
+        "estimated_weight_kg": est_kg,
+        "fulfillment_policy_id": chosen_policy_id,
+    })
+
     title, description = generate_listing_content(ai_data, context)
 
     context.user_data.update({
@@ -133,7 +147,8 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         image_urls=data["image_urls"],
         price=price,
         compatible_years=data.get("compatible_years", "N/A"),
-        part_type=data.get("part_type", "N/A")
+        part_type=data.get("part_type", "N/A"),
+        fulfillment_policy_id=data.get("fulfillment_policy_id")  # <— ВАЖНО
     )
 
     await update.message.reply_text(result)

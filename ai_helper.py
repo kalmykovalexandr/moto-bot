@@ -16,20 +16,20 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 async def analyze_motorcycle_part(image_url: str, brand: str, model: str, year: str, max_part_len: int = 30):
     prompt = (
         f"You are a motorcycle specialist. In front of you is a photo of a motorcycle part.\n"
-        f"The user has already provided the following information:\n- Brand: {brand}\n- Model: {model}\n- Year: {year}\n"
-        "Your task: identify the part from the photo. Respond in JSON format with the following fields:\n"
+        f"The user has provided:\n- Brand: {brand}\n- Model: {model}\n- Year: {year}\n\n"
+        "Task: identify the part and ESTIMATE weight for shipping. Respond ONLY in JSON with fields:\n"
         "- is_motor (true/false)\n"
-        "- part_type (string, in Italian)\n"
-        "- part_type_short (string, in Italian) = a concise name for the eBay title, "
-        f"no brand/model/year, no articles, abbreviations allowed, MAX {max_part_len} characters\n"
-        "- color (string, in Italian)\n- compatible_years (string, e.g., \"1997–2000\")\n"
+        "- part_type (Italian)\n"
+        f"- part_type_short (Italian) = concise name, MAX {max_part_len} chars (no brand/model/year)\n"
+        "- color (Italian)\n"
+        "- compatible_years (string like \"1997–2000\")\n"
+        "- estimated_weight_kg (number) = rough estimate of the PART weight (not packaged). Use decimals (e.g., 0.6).\n"
+        "- weight_class (one of: XS, S, M, L, XL) based on these thresholds:\n"
+        "  XS: <=0.25 kg | S: <=0.75 kg | M: <=2 kg | L: <=5 kg | XL: >5 kg\n"
         "If it is an engine, also include:\n"
-        "- engine_type\n- displacement\n- bore_stroke\n"
-        "- compression_ratio\n- max_power\n- max_torque\n- cooling\n"
-        "- fuel_system\n- starter\n- gearbox\n- final_drive\n"
-        "- recommended_oil\n- oil_capacity\n\n"
-        "Respond ONLY in JSON format (do not add anything else, only JSON).\n"
-        "If something is unknown, write \"N/A\".\n"
+        "- engine_type, displacement, bore_stroke, compression_ratio, max_power, max_torque,\n"
+        "- cooling, fuel_system, starter, gearbox, final_drive, recommended_oil, oil_capacity\n"
+        "If unknown, use \"N/A\".\n"
     )
 
     try:

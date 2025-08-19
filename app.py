@@ -9,10 +9,6 @@ from config import *
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def home():
-    return "Bot is running", 200
-
 @app.route("/callback")
 def callback():
     raw_code = request.args.get("code")

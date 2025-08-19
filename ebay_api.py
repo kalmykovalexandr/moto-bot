@@ -24,7 +24,7 @@ def get_access_token():
     else:
         raise Exception(f"Failed to get access token: {r.text}")
 
-def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type):
+def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type, fulfillment_policy_id: str | None = None):
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -64,6 +64,8 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
     if inv.status_code not in [200, 204]:
         return f"Failed to create inventory item: {inv.status_code} {inv.text}"
 
+    policy_id = fulfillment_policy_id or FULFILLMENT_POLICY_ID
+
     offer_payload = {
         "sku": sku,
         "marketplaceId": "EBAY_IT",
@@ -72,7 +74,7 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
         "categoryId": "179753",
         "listingDescription": description,
         "listingPolicies": {
-            "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
+            "fulfillmentPolicyId": policy_id,
             "paymentPolicyId": PAYMENT_POLICY_ID,
             "returnPolicyId": RETURN_POLICY_ID
         },
