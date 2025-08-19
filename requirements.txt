@@ -4,3 +4,4 @@ python-telegram-bot==20.6
 python-dotenv
 cloudinary
 openai
+gunicorn
