@@ -4,7 +4,7 @@ import uuid
 import requests
 
 from auth.ebay_oauth import get_access_token
-from configs.config import PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
+from configs.config import PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY, FULFILLMENT_POLICY_ID
 
 
 def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type, fulfillment_policy_id: str | None = None):
@@ -54,7 +54,8 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
         "categoryId": "179753",
         "listingDescription": description,
         "listingPolicies": {
-            "fulfillmentPolicyId": fulfillment_policy_id,
+            # TODO HERE fulfillmentPolicyId
+            "fulfillmentPolicyId": FULFILLMENT_POLICY_ID,
             "paymentPolicyId": PAYMENT_POLICY_ID,
             "returnPolicyId": RETURN_POLICY_ID
         },
