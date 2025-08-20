@@ -1,17 +1,19 @@
-# Use a lightweight Python base image
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Set the working directory inside the container
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy all project files into the container
-COPY . .
-
-# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port used by the Flask app
-EXPOSE 5000
+COPY . .
 
-# Start the Flask application
-CMD ["python", "app.py"]
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "bot.py"]

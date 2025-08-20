@@ -3,7 +3,7 @@ import logging
 
 from openai import OpenAI
 
-from config import OPENAI_API_KEY
+from configs.config import OPENAI_API_KEY
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

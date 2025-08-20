@@ -1,8 +1,8 @@
 import requests
 from telegram.ext import ApplicationBuilder
 
-from config import TELEGRAM_BOT_TOKEN
-from handlers import create_conv_handler, register_handlers, error_handler
+from configs.config import TELEGRAM_BOT_TOKEN
+from handlers.handlers import create_conv_handler, register_handlers, error_handler
 
 
 def main():

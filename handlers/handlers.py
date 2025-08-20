@@ -8,11 +8,12 @@ from telegram.ext import (
     ContextTypes, ConversationHandler
 )
 
-from ai_helper import analyze_motorcycle_part
-from cloudinary_utils import upload_image, delete_image
-from ebay_api import publish_item
-from shipping import pick_policy_by_weight_class, pick_weight_class_by_kg
-from utils import *
+from clients.cloudinary_client import delete_image, upload_image
+from clients.ebay_client import publish_item
+from helpers.ai_helper import analyze_motorcycle_part
+from utils.shipping_util import pick_weight_class_by_kg, pick_policy_by_weight_class
+from utils.template_util import generate_motor_title, generate_motor_description, generate_part_title, \
+    generate_part_description
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +149,7 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         price=price,
         compatible_years=data.get("compatible_years", "N/A"),
         part_type=data.get("part_type", "N/A"),
-        fulfillment_policy_id=data.get("fulfillment_policy_id")  # <— ВАЖНО
+        fulfillment_policy_id=data.get("fulfillment_policy_id")
     )
 
     await update.message.reply_text(result)
@@ -319,6 +320,7 @@ def create_conv_handler():
         },
         fallbacks=[CommandHandler("end", end)]
     )
+
 
 def register_handlers(app, create_conv_handler):
     app.add_handler(create_conv_handler)

@@ -1,33 +1,15 @@
-import base64
+import os
 import uuid
 
 import requests
-from config import *
 
-from config import FULFILLMENT_POLICY_ID, PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
+from auth.ebay_oauth import get_access_token
+from configs.config import PAYMENT_POLICY_ID, RETURN_POLICY_ID, MERCHANT_LOCATION_KEY
 
-def get_access_token():
-    auth = base64.b64encode(f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}".encode()).decode()
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f"Basic {auth}"
-    }
-    data = {
-        "grant_type": "refresh_token",
-        "refresh_token": EBAY_REFRESH_TOKEN,
-        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
-    }
-
-    r = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
-    if r.status_code == 200:
-        return r.json()["access_token"]
-    else:
-        raise Exception(f"Failed to get access token: {r.text}")
 
 def publish_item(title, description, brand, model, mpn, color, image_urls, price, compatible_years, part_type, fulfillment_policy_id: str | None = None):
-    access_token = get_access_token()
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {get_access_token()}",
         "Content-Type": "application/json",
         "Content-Language": "it-IT"
     }
@@ -64,8 +46,6 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
     if inv.status_code not in [200, 204]:
         return f"Failed to create inventory item: {inv.status_code} {inv.text}"
 
-    policy_id = fulfillment_policy_id or FULFILLMENT_POLICY_ID
-
     offer_payload = {
         "sku": sku,
         "marketplaceId": "EBAY_IT",
@@ -74,7 +54,7 @@ def publish_item(title, description, brand, model, mpn, color, image_urls, price
         "categoryId": "179753",
         "listingDescription": description,
         "listingPolicies": {
-            "fulfillmentPolicyId": policy_id,
+            "fulfillmentPolicyId": fulfillment_policy_id,
             "paymentPolicyId": PAYMENT_POLICY_ID,
             "returnPolicyId": RETURN_POLICY_ID
         },
