@@ -9,6 +9,4 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uvicorn", "auth.ebay_oauth:app", "--host", "0.0.0.0", "--port", "8080"]
-
-# CMD ["python", "bot.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
