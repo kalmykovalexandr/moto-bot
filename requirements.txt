@@ -2,3 +2,5 @@ python-telegram-bot==20.6
 requests
 cloudinary
 openai
+fastapi
+uvicorn[standard]
