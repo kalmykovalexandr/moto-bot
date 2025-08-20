@@ -102,9 +102,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     est_kg = ai_data.get("estimated_weight_kg")
-    wc_ai = (ai_data.get("weight_class") or "").upper()
 
-    weight_class = wc_ai if wc_ai in ("XS", "S", "M", "L", "XL") else pick_weight_class_by_kg(est_kg)
+    wc_ai = (ai_data.get("weight_class") or "").upper()
+    allowed = {"XS", "S", "M", "L", "XL", "XXL", "FREIGHT"}
+    weight_class = wc_ai if wc_ai in allowed else pick_weight_class_by_kg(est_kg)
 
     chosen_policy_id = pick_policy_by_weight_class(weight_class)
 
