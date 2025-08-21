@@ -177,13 +177,37 @@ def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
 
 
 def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
+    def _join_tags(tags):
+        if not tags:
+            return ""
+        # только строки, обрезаем пробелы
+        cleaned = [str(t).strip() for t in tags if isinstance(t, str) and t.strip()]
+        # уберём дубликаты, сохранив порядок
+        seen = set()
+        unique = []
+        for t in cleaned:
+            if t.lower() not in seen:
+                seen.add(t.lower())
+                # отсечём слишком длинные токены (редкая история)
+                unique.append(t[:60])
+        return ", ".join(unique)[:500]  # общий лимит на блок
+
+    tags_it_str = _join_tags(ai_data.get("tags_it"))
+    tags_en_str = _join_tags(ai_data.get("tags_en"))
+
+    brand = context.user_data.get("brand", "N/A")
+    model = context.user_data.get("model", "N/A")
+    year = context.user_data.get("year", "N/A")
+    mpn = context.user_data.get("mpn", "N/A")
+
     if ai_data.get("is_motor"):
         title = generate_motor_title(
-            context.user_data["brand"], context.user_data["model"], ai_data.get("compatible_years", "N/A")
+            brand, model, ai_data.get("compatible_years", "N/A")
         )
+        # при желании: title = title[:80]
         description = generate_motor_description(
-            brand=context.user_data["brand"],
-            model=context.user_data["model"],
+            brand=brand,
+            model=model,
             engine_type=ai_data.get("engine_type", "N/A"),
             displacement=ai_data.get("displacement", "N/A"),
             bore_stroke=ai_data.get("bore_stroke", "N/A"),
@@ -197,27 +221,42 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
             final_drive=ai_data.get("final_drive", "N/A"),
             recommended_oil=ai_data.get("recommended_oil", "N/A"),
             oil_capacity=ai_data.get("oil_capacity", "N/A"),
-            year=context.user_data["year"],
+            year=year,
             compatible_years=ai_data.get("compatible_years", "N/A"),
             color=ai_data.get("color", "N/A"),
-            mpn=context.user_data["mpn"]
+            mpn=mpn,
+            # EN
+            english_summary_en=ai_data.get("english_summary_en", ""),
+            brand_en=brand,
+            model_en=model,
+            compatible_years_en=ai_data.get("compatible_years_en", ai_data.get("compatible_years", "N/A")),
+            color_en=ai_data.get("color_en", ai_data.get("color", "N/A")),
+            # TAGS
+            tags_it=tags_it_str,
+            tags_en=tags_en_str,
         )
     else:
         part_for_title = ai_data.get("part_type_short") or ai_data.get("part_type", "N/A")
         title = generate_part_title(
-            part_for_title,
-            context.user_data["brand"],
-            context.user_data["model"],
-            ai_data.get("compatible_years", "N/A"),
+            part_for_title, brand, model, ai_data.get("compatible_years", "N/A"),
         )
+        # при желании: title = title[:80]
         description = generate_part_description(
-            brand=context.user_data["brand"],
-            model=context.user_data["model"],
-            year=context.user_data["year"],
+            brand=brand,
+            model=model,
+            year=year,
             compatible_years=ai_data.get("compatible_years", "N/A"),
             part_type=ai_data.get("part_type", "N/A"),
             color=ai_data.get("color", "N/A"),
-            mpn=context.user_data["mpn"]
+            mpn=mpn,
+            # EN
+            part_type_en=ai_data.get("part_type_en", ""),
+            color_en=ai_data.get("color_en", ai_data.get("color", "N/A")),
+            compatible_years_en=ai_data.get("compatible_years_en", ai_data.get("compatible_years", "N/A")),
+            description_en=ai_data.get("description_en", ""),
+            # TAGS
+            tags_it=tags_it_str,
+            tags_en=tags_en_str,
         )
     return title, description
 

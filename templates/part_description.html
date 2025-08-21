@@ -1,19 +1,38 @@
-<p><strong>Ricambio usato per moto – {brand} {model}</strong></p>
+<!-- eBay-safe HTML (no scripts/forms/iframes) -->
+<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5;">
+    <!-- IT first -->
+    <h2 style="margin:0 0 8px 0;">Descrizione (IT)</h2>
+    <p>
+        Ricambio: <strong>{part_type}</strong><br/>
+        Marca/Modello: <strong>{brand} {model}</strong><br/>
+        Anno: <strong>{year}</strong><br/>
+        Compatibilità: <strong>{compatible_years}</strong><br/>
+        Colore: <strong>{color}</strong><br/>
+        MPN: <strong>{mpn}</strong>
+    </p>
 
-<ul>
-    <li><strong>Compatibile con:</strong> {model}</li>
-    <li><strong>Anno:</strong> {year}</li>
-    <li><strong>Anni compatibili:</strong> {compatible_years}</li>
-    <li><strong>Tipo di pezzo:</strong> {part_type}</li>
-    <li><strong>Colore:</strong> {color}</li>
-    <li><strong>Codice/MPN:</strong> {mpn}</li>
-</ul>
+    <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;"/>
 
-<p>Parte originale usata, testata e perfettamente funzionante.<br>
-    Presenta segni di usura compatibili con l’utilizzo.<br>
-    Verifica le condizioni effettive tramite le foto allegate.</p>
+    <!-- EN second -->
+    <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
+    {% if description_en %}
+    <p>{description_en}</p>
+    {% else %}
+    <p>
+        Part: <strong>{part_type_en}</strong><br/>
+        Brand/Model: <strong>{brand} {model}</strong><br/>
+        Year: <strong>{year}</strong><br/>
+        Compatibility: <strong>{compatible_years_en}</strong><br/>
+        Color: <strong>{color_en}</strong><br/>
+        MPN: <strong>{mpn}</strong>
+    </p>
+    {% endif %}
 
-<p>Spedizione veloce e sicura in tutta Italia, mondo.</p>
+    <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;"/>
+    <h3 style="margin:0 0 8px 0;">Parole chiave (IT)</h3>
+    <p>{tags_it}</p>
 
-<p>Se il ricambio ricevuto risulta danneggiato durante la spedizione o non è funzionante,<br>
-    provvederemo al rimborso completo oppure alla sostituzione con un pezzo equivalente, se disponibile.</p>
+    <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
+    <p>{tags_en}</p>
+
+</div>
