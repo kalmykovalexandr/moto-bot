@@ -180,17 +180,14 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
     def _join_tags(tags):
         if not tags:
             return ""
-        # только строки, обрезаем пробелы
         cleaned = [str(t).strip() for t in tags if isinstance(t, str) and t.strip()]
-        # уберём дубликаты, сохранив порядок
         seen = set()
         unique = []
         for t in cleaned:
             if t.lower() not in seen:
                 seen.add(t.lower())
-                # отсечём слишком длинные токены (редкая история)
                 unique.append(t[:60])
-        return ", ".join(unique)[:500]  # общий лимит на блок
+        return ", ".join(unique)[:500]
 
     tags_it_str = _join_tags(ai_data.get("tags_it"))
     tags_en_str = _join_tags(ai_data.get("tags_en"))
@@ -204,7 +201,6 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         title = generate_motor_title(
             brand, model, ai_data.get("compatible_years", "N/A")
         )
-        # при желании: title = title[:80]
         description = generate_motor_description(
             brand=brand,
             model=model,
@@ -240,7 +236,6 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         title = generate_part_title(
             part_for_title, brand, model, ai_data.get("compatible_years", "N/A"),
         )
-        # при желании: title = title[:80]
         description = generate_part_description(
             brand=brand,
             model=model,
