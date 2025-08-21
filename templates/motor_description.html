@@ -23,8 +23,8 @@
 
     <!-- EN second -->
     <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
-    {% if english_summary_en %}
-    <p>{english_summary_en}</p>
+    {% if english_summary_en|default("", true) %}
+    <p>{{ english_summary_en|default("", true) }}</p>
     {% else %}
     <p>
         Engine for <strong>{brand} {model}</strong> ({year}). Key specs: type <strong>{engine_type}</strong>,
@@ -44,5 +44,4 @@
 
     <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
     <p>{tags_en}</p>
-
 </div>

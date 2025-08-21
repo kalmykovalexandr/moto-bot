@@ -15,8 +15,8 @@
 
     <!-- EN second -->
     <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
-    {% if description_en %}
-    <p>{description_en}</p>
+    {% if description_en|default("", true) %}
+    <p>{{ description_en|default("", true) }}</p>
     {% else %}
     <p>
         Part: <strong>{part_type_en}</strong><br/>
@@ -34,5 +34,4 @@
 
     <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
     <p>{tags_en}</p>
-
 </div>
