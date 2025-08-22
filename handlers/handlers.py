@@ -212,7 +212,8 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
 
     if ai_data.get("is_motor"):
         title = generate_motor_title(
-            brand, model, ai_data.get("compatible_years", "N/A")
+            brand, model, ai_data.get("compatible_years", "N/A"),
+            displacement=ai_data.get("displacement")
         )
         description = generate_motor_description(
             brand=brand,
@@ -248,6 +249,7 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         part_for_title = ai_data.get("part_type_short") or ai_data.get("part_type", "N/A")
         title = generate_part_title(
             part_for_title, brand, model, ai_data.get("compatible_years", "N/A"),
+            color=ai_data.get("color")
         )
         description = generate_part_description(
             brand=brand,

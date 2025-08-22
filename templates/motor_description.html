@@ -38,9 +38,6 @@
 
     <!-- ================= ENGLISH ================= -->
     <h2 style="margin:0 0 8px 0; font-size:16px;">Description (EN)</h2>
-    {% if english_summary_en|default("", true) %}
-    <p>{{ english_summary_en|default("", true) }}</p>
-    {% else %}
     <p>
         Engine for <strong>{{ brand }} {{ model }}</strong> ({{ year }})<br/>
         Engine type: <strong>{{ engine_type }}</strong><br/>
@@ -57,8 +54,6 @@
         Color: <strong>{{ color_en }}</strong><br/>
         MPN: <strong>{{ mpn }}</strong>
     </p>
-    {% endif %}
-
 
     <h3 style="margin:12px 0 6px 0;">Conditions and Warranty</h3>
     <p style="font-size:13px; color:#444;">

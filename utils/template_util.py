@@ -19,19 +19,21 @@ def generate_part_description(**kwargs):
     tmpl = _env.get_template("part_description.html")
     return tmpl.render(**kwargs)
 
-def generate_motor_title(brand, model, compatible_years):
+def generate_motor_title(brand, model, compatible_years, displacement=None):
     parts = ["Motore", brand, model]
     if compatible_years and compatible_years != "N/A":
         parts.append(compatible_years)
-    parts.append("Usato Funzionante")
+    if displacement and str(displacement).strip() and str(displacement).strip() != "N/A":
+        parts.append(str(displacement).strip())
     title = _normalize_spaces(" ".join(parts))
     return _cut_to(title, MAX_TITLE_LEN)
 
-def generate_part_title(part_type_for_title, brand, model, compatible_years):
+def generate_part_title(part_type_for_title, brand, model, compatible_years, color=None):
     tail_parts = [brand, model]
     if compatible_years and compatible_years != "N/A":
         tail_parts.append(compatible_years)
-    tail_parts.append("Usato Originale")
+    if color and str(color).strip() and str(color).strip() != "N/A":
+        tail_parts.append(str(color).strip())
     tail = _normalize_spaces(" ".join(tail_parts))
 
     leftover = MAX_TITLE_LEN - len(tail) - 1
