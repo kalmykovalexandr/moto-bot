@@ -4,3 +4,4 @@ cloudinary
 openai
 fastapi
 uvicorn[standard]
+jinja2

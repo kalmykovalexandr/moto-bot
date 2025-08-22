@@ -1,47 +1,47 @@
 <!-- eBay-safe HTML (no scripts/forms/iframes) -->
-<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5;">
-    <!-- IT first -->
-    <h2 style="margin:0 0 8px 0;">Descrizione (IT)</h2>
-    <p>
-        Motore per <strong>{brand} {model}</strong> ({year})<br/>
-        Tipo motore: <strong>{engine_type}</strong><br/>
-        Cilindrata: <strong>{displacement}</strong><br/>
-        Alesaggio/Corsa: <strong>{bore_stroke}</strong><br/>
-        Rapporto di compressione: <strong>{compression_ratio}</strong><br/>
-        Potenza max: <strong>{max_power}</strong> — Coppia max: <strong>{max_torque}</strong><br/>
-        Raffreddamento: <strong>{cooling}</strong><br/>
-        Alimentazione: <strong>{fuel_system}</strong><br/>
-        Avviamento: <strong>{starter}</strong><br/>
-        Cambio: <strong>{gearbox}</strong> — Trasmissione finale: <strong>{final_drive}</strong><br/>
-        Olio consigliato: <strong>{recommended_oil}</strong> — Capacità olio: <strong>{oil_capacity}</strong><br/>
-        Compatibilità: <strong>{compatible_years}</strong><br/>
-        Colore: <strong>{color}</strong><br/>
-        MPN: <strong>{mpn}</strong>
-    </p>
+<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5%;">
+  <!-- IT first -->
+  <h2 style="margin:0 0 8px 0;">Descrizione (IT)</h2>
+  <p>
+    Motore per <strong>{{ brand }} {{ model }}</strong> ({{ year }})<br/>
+    Tipo motore: <strong>{{ engine_type }}</strong><br/>
+    Cilindrata: <strong>{{ displacement }}</strong><br/>
+    Alesaggio/Corsa: <strong>{{ bore_stroke }}</strong><br/>
+    Rapporto di compressione: <strong>{{ compression_ratio }}</strong><br/>
+    Potenza max: <strong>{{ max_power }}</strong> — Coppia max: <strong>{{ max_torque }}</strong><br/>
+    Raffreddamento: <strong>{{ cooling }}</strong><br/>
+    Alimentazione: <strong>{{ fuel_system }}</strong><br/>
+    Avviamento: <strong>{{ starter }}</strong><br/>
+    Cambio: <strong>{{ gearbox }}</strong> — Trasmissione finale: <strong>{{ final_drive }}</strong><br/>
+    Olio consigliato: <strong>{{ recommended_oil }}</strong> — Capacità olio: <strong>{{ oil_capacity }}</strong><br/>
+    Compatibilità: <strong>{{ compatible_years }}</strong><br/>
+    Colore: <strong>{{ color }}</strong><br/>
+    MPN: <strong>{{ mpn }}</strong>
+  </p>
 
-    <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;"/>
+  <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
 
-    <!-- EN second -->
-    <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
-    {% if english_summary_en|default("", true) %}
+  <!-- EN second -->
+  <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
+  {% if english_summary_en|default("", true) %}
     <p>{{ english_summary_en|default("", true) }}</p>
-    {% else %}
+  {% else %}
     <p>
-        Engine for <strong>{brand} {model}</strong> ({year}). Key specs: type <strong>{engine_type}</strong>,
-        displacement <strong>{displacement}</strong>, bore/stroke <strong>{bore_stroke}</strong>,
-        compression <strong>{compression_ratio}</strong>, max power <strong>{max_power}</strong>,
-        max torque <strong>{max_torque}</strong>, cooling <strong>{cooling}</strong>,
-        fuel system <strong>{fuel_system}</strong>, starter <strong>{starter}</strong>,
-        gearbox <strong>{gearbox}</strong>, final drive <strong>{final_drive}</strong>,
-        oil <strong>{recommended_oil}</strong> ({oil_capacity}). Compatibility: <strong>{compatible_years_en}</strong>.
-        Color: <strong>{color_en}</strong>. MPN: <strong>{mpn}</strong>.
+      Engine for <strong>{{ brand }} {{ model }}</strong> ({{ year }}). Key specs: type <strong>{{ engine_type }}</strong>,
+      displacement <strong>{{ displacement }}</strong>, bore/stroke <strong>{{ bore_stroke }}</strong>,
+      compression <strong>{{ compression_ratio }}</strong>, max power <strong>{{ max_power }}</strong>,
+      max torque <strong>{{ max_torque }}</strong>, cooling <strong>{{ cooling }}</strong>,
+      fuel system <strong>{{ fuel_system }}</strong>, starter <strong>{{ starter }}</strong>,
+      gearbox <strong>{{ gearbox }}</strong>, final drive <strong>{{ final_drive }}</strong>,
+      oil <strong>{{ recommended_oil }}</strong> ({{ oil_capacity }}). Compatibility: <strong>{{ compatible_years_en }}</strong>.
+      Color: <strong>{{ color_en }}</strong>. MPN: <strong>{{ mpn }}</strong>.
     </p>
-    {% endif %}
+  {% endif %}
 
-    <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;"/>
-    <h3 style="margin:0 0 8px 0;">Parole chiave (IT)</h3>
-    <p>{tags_it}</p>
+  <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
+  <h3 style="margin:0 0 8px 0;">Parole chiave (IT)</h3>
+  <p>{{ tags_it }}</p>
 
-    <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
-    <p>{tags_en}</p>
+  <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
+  <p>{{ tags_en }}</p>
 </div>

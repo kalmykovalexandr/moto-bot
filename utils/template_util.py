@@ -1,12 +1,23 @@
+from pathlib import Path
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 MAX_TITLE_LEN = 80
 
+_TEMPLATES_DIR = Path("templates")
+_env = Environment(
+    loader=FileSystemLoader(str(_TEMPLATES_DIR)),
+    autoescape=select_autoescape(["html", "xml"]),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
+
 def generate_motor_description(**kwargs):
-    with open("templates/motor_description.html", encoding="utf-8") as f:
-        return f.read().format(**kwargs)
+    tmpl = _env.get_template("motor_description.html")
+    return tmpl.render(**kwargs)
 
 def generate_part_description(**kwargs):
-    with open("templates/part_description.html", encoding="utf-8") as f:
-        return f.read().format(**kwargs)
+    tmpl = _env.get_template("part_description.html")
+    return tmpl.render(**kwargs)
 
 def generate_motor_title(brand, model, compatible_years):
     parts = ["Motore", brand, model]
