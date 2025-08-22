@@ -67,10 +67,14 @@ async def handle_mpn_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.setdefault("image_urls", [])
-    context.user_data.setdefault("cloudinary_public_ids", [])
+    ud = context.user_data
+    ud.setdefault("image_urls", [])
+    ud.setdefault("cloudinary_public_ids", [])
+    ud.setdefault("photo_processing", False)
+    ud.setdefault("ai_data_fetched", False)
+    ud.setdefault("price_prompt_sent", False)
 
-    if not update.message.photo:
+    if not update.message or not update.message.photo:
         await update.message.reply_text("Please send a valid image file.")
         return ASKING_PRICE
 
@@ -81,54 +85,63 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         uploaded = upload_image(temp_path)
-        context.user_data["image_urls"].append(uploaded["secure_url"])
-        context.user_data["cloudinary_public_ids"].append(uploaded["public_id"])
+        ud["image_urls"].append(uploaded["secure_url"])
+        ud["cloudinary_public_ids"].append(uploaded["public_id"])
     except Exception as e:
         logger.error(f"Cloudinary upload failed: {e}")
         await update.message.reply_text("Couldn't upload the photo. Please try again.")
         return ASKING_PRICE
     finally:
-        if os.path.exists(temp_path):
+        try:
             os.remove(temp_path)
+        except Exception:
+            pass
 
-    if context.user_data.get("ai_data_fetched"):
+    if ud["photo_processing"] or ud["ai_data_fetched"]:
         return ASKING_PRICE
 
-    ai_data = await analyze_motorcycle_part(
-        image_url=context.user_data["image_urls"][0],
-        brand=context.user_data["brand"],
-        model=context.user_data["model"],
-        year=context.user_data["year"]
-    )
+    ud["photo_processing"] = True
+    try:
+        ai_data = await analyze_motorcycle_part(
+            image_url=ud["image_urls"][0],
+            brand=ud["brand"],
+            model=ud["model"],
+            year=ud["year"],
+        )
 
-    est_kg = ai_data.get("estimated_weight_kg")
+        est_kg = ai_data.get("estimated_weight_kg")
+        wc_ai = (ai_data.get("weight_class") or "").upper()
+        allowed = {"XS", "S", "M", "L", "XL", "XXL", "FREIGHT"}
+        weight_class = wc_ai if wc_ai in allowed else pick_weight_class_by_kg(est_kg)
+        chosen_policy_id = pick_policy_by_weight_class(weight_class)
 
-    wc_ai = (ai_data.get("weight_class") or "").upper()
-    allowed = {"XS", "S", "M", "L", "XL", "XXL", "FREIGHT"}
-    weight_class = wc_ai if wc_ai in allowed else pick_weight_class_by_kg(est_kg)
+        title, description = generate_listing_content(ai_data, context)
 
-    chosen_policy_id = pick_policy_by_weight_class(weight_class)
+        ud.update({
+            "weight_class": weight_class,
+            "estimated_weight_kg": est_kg,
+            "fulfillment_policy_id": chosen_policy_id,
+            "title": title,
+            "description": description,
+            "color": ai_data.get("color", "N/A"),
+            "compatible_years": ai_data.get("compatible_years", "N/A"),
+            "part_type": ai_data.get("part_type", "N/A"),
+            "ai_data_fetched": True,
+        })
+    except Exception as e:
+        logger.error(f"AI/prepare listing failed: {e}", exc_info=True)
+        ud["photo_processing"] = False
+        await update.message.reply_text("Processing failed. Please send the photo again.")
+        return ASKING_PRICE
+    finally:
+        ud["photo_processing"] = False
 
-    context.user_data.update({
-        "weight_class": weight_class,
-        "estimated_weight_kg": est_kg,
-        "fulfillment_policy_id": chosen_policy_id,
-    })
+    if not ud["price_prompt_sent"]:
+        await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
+        ud["price_prompt_sent"] = True
 
-    title, description = generate_listing_content(ai_data, context)
-
-    context.user_data.update({
-        "title": title,
-        "description": description,
-        "color": ai_data.get("color", "N/A"),
-        "compatible_years": ai_data.get("compatible_years", "N/A"),
-        "part_type": ai_data.get("part_type", "N/A"),
-        "ai_data_fetched": True
-    })
-
-    await update.message.reply_text("Photo(s) uploaded. Now enter the price (e.g., 19.99):")
-    context.user_data["photo_uploaded_once"] = True
     return ASKING_PRICE
+
 
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
