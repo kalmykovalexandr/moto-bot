@@ -27,7 +27,10 @@ def _request_new_access_token():
     }
 
     resp = requests.post(EBAY_OAUTH_URL, headers=headers, data=data, timeout=15)
-    resp.raise_for_status()
+
+    if resp.status_code != 200:
+        print("OAuth error (refresh_token):", resp.status_code, resp.text)
+        resp.raise_for_status()
 
     tokens = resp.json()
     _access_token = tokens["access_token"]

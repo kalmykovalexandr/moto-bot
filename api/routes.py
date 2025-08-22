@@ -42,6 +42,9 @@ def callback(code: str = None):
 
     response = requests.post("https://api.ebay.com/identity/v1/oauth2/token", headers=headers, data=data)
 
+    if response.status_code != 200:
+        print("OAuth error (authorization_code):", response.status_code, response.text)
+
     if response.status_code == 200:
         tokens = response.json()
         return JSONResponse(content=tokens)
