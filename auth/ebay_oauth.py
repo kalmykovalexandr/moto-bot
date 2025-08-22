@@ -19,11 +19,7 @@ def _request_new_access_token():
     data = {
         "grant_type": "refresh_token",
         "refresh_token": EBAY_REFRESH_TOKEN,
-        "scope": (
-            "https://api.ebay.com/oauth/api_scope "
-            "https://api.ebay.com/oauth/api_scope/sell.inventory "
-            "https://api.ebay.com/oauth/api_scope/sell.account"
-        )
+        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
     }
 
     resp = requests.post(EBAY_OAUTH_URL, headers=headers, data=data, timeout=15)
