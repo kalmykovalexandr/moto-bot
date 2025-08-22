@@ -2,9 +2,8 @@ import base64
 import logging
 import time
 import requests
-from configs.config import EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN
+from configs.config import EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN, EBAY_OAUTH_SCOPE, EBAY_OAUTH_URL
 
-EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 _access_token = None
 _expires_at = 0  # timestamp
 
@@ -19,7 +18,7 @@ def _request_new_access_token():
     data = {
         "grant_type": "refresh_token",
         "refresh_token": EBAY_REFRESH_TOKEN,
-        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
+        "scope": EBAY_OAUTH_SCOPE
     }
 
     resp = requests.post(EBAY_OAUTH_URL, headers=headers, data=data, timeout=15)

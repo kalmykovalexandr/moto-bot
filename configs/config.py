@@ -11,6 +11,9 @@ CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
+EBAY_OAUTH_SCOPE="https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
+EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+
 # EBAY CONFIGS
 MARKETPLACE_ID = "EBAY_IT"
 MERCHANT_LOCATION_KEY = "sezze-warehouse"
