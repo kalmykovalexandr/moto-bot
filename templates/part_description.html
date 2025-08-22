@@ -1,37 +1,58 @@
-<!-- eBay-safe HTML (no scripts/forms/iframes) -->
-<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5;">
-  <!-- IT first -->
-  <h2 style="margin:0 0 8px 0;">Descrizione (IT)</h2>
-  <p>
-    Ricambio: <strong>{{ part_type }}</strong><br/>
-    Marca/Modello: <strong>{{ brand }} {{ model }}</strong><br/>
-    Anno: <strong>{{ year }}</strong><br/>
-    Compatibilità: <strong>{{ compatible_years }}</strong><br/>
-    Colore: <strong>{{ color }}</strong><br/>
-    MPN: <strong>{{ mpn }}</strong>
-  </p>
+<!-- eBay-safe HTML -->
+<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#222;">
 
-  <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
-
-  <!-- EN second -->
-  <h2 style="margin:0 0 8px 0;">Description (EN)</h2>
-  {% if description_en|default("", true) %}
-    <p>{{ description_en|default("", true) }}</p>
-  {% else %}
+    <!-- ================= ITALIAN ================= -->
+    <h2 style="margin:0 0 8px 0; font-size:16px;">Descrizione (IT)</h2>
     <p>
-      Part: <strong>{{ part_type_en }}</strong><br/>
-      Brand/Model: <strong>{{ brand }} {{ model }}</strong><br/>
-      Year: <strong>{{ year }}</strong><br/>
-      Compatibility: <strong>{{ compatible_years_en }}</strong><br/>
-      Color: <strong>{{ color_en }}</strong><br/>
-      MPN: <strong>{{ mpn }}</strong>
+        Ricambio: <strong>{{ part_type }}</strong><br/>
+        Marca/Modello: <strong>{{ brand }} {{ model }}</strong><br/>
+        Anno: <strong>{{ year }}</strong><br/>
+        Compatibilità: <strong>{{ compatible_years }}</strong><br/>
+        Colore: <strong>{{ color }}</strong><br/>
+        MPN: <strong>{{ mpn }}</strong>
     </p>
-  {% endif %}
 
-  <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
-  <h3 style="margin:0 0 8px 0;">Parole chiave (IT)</h3>
-  <p>{{ tags_it }}</p>
+    <h3 style="margin:12px 0 6px 0;">Condizioni e Garanzia</h3>
+    <p style="font-size:13px; color:#444;">
+        Parte originale usata, testata e perfettamente funzionante.<br/>
+        Presenta segni di usura compatibili con l’utilizzo.<br/>
+        Verifica le condizioni effettive tramite le foto allegate.<br/>
+        Spedizione veloce e sicura in tutta Italia e nel mondo.<br/>
+        Se il ricambio ricevuto risulta danneggiato durante la spedizione o non è funzionante,
+        provvederemo al rimborso completo oppure alla sostituzione con un pezzo equivalente, se disponibile.
+    </p>
 
-  <h3 style="margin:12px 0 8px 0;">Keywords (EN)</h3>
-  <p>{{ tags_en }}</p>
+    <h3 style="margin:12px 0 6px 0;">Parole chiave (IT)</h3>
+    <p style="font-size:12px; color:#666;">{{ tags_it }}</p>
+
+    <hr style="border:none;border-top:1px solid #ccc;margin:20px 0;"/>
+
+    <!-- ================= ENGLISH ================= -->
+    <h2 style="margin:0 0 8px 0; font-size:16px;">Description (EN)</h2>
+    {% if description_en|default("", true) %}
+    <p>{{ description_en|default("", true) }}</p>
+    {% else %}
+    <p>
+        Part: <strong>{{ part_type_en }}</strong><br/>
+        Brand/Model: <strong>{{ brand }} {{ model }}</strong><br/>
+        Year: <strong>{{ year }}</strong><br/>
+        Compatibility: <strong>{{ compatible_years_en }}</strong><br/>
+        Color: <strong>{{ color_en }}</strong><br/>
+        MPN: <strong>{{ mpn }}</strong>
+    </p>
+    {% endif %}
+
+    <h3 style="margin:12px 0 6px 0;">Conditions and Warranty</h3>
+    <p style="font-size:13px; color:#444;">
+        Original used part, tested and fully functional.<br/>
+        Shows normal signs of wear consistent with use.<br/>
+        Please check the actual condition in the attached photos.<br/>
+        Fast and secure shipping throughout Italy and worldwide.<br/>
+        If the received part is damaged during shipping or not functional,
+        we will provide a full refund or replace it with an equivalent item if available.
+    </p>
+
+    <h3 style="margin:12px 0 6px 0;">Keywords (EN)</h3>
+    <p style="font-size:12px; color:#666;">{{ tags_en }}</p>
+
 </div>
