@@ -10,10 +10,10 @@ from telegram.ext import (
 
 from clients.cloudinary_client import delete_image, upload_image
 from clients.ebay_client import publish_item
-from helpers.ai_helper import analyze_motorcycle_part
-from utils.shipping_util import pick_weight_class_by_kg, pick_policy_by_weight_class
 from utils.template_util import generate_motor_title, generate_motor_description, generate_part_title, \
     generate_part_description
+from utils.shipping_util import WEIGHT_THRESHOLDS, pick_weight_class_by_kg, pick_policy_by_weight_class
+from helpers.ai_helper import analyze_motorcycle_part
 
 logger = logging.getLogger(__name__)
 
@@ -107,12 +107,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             brand=ud["brand"],
             model=ud["model"],
             year=ud["year"],
+            thr=WEIGHT_THRESHOLDS,
         )
 
         est_kg = ai_data.get("estimated_weight_kg")
-        wc_ai = (ai_data.get("weight_class") or "").upper()
-        allowed = {"XS", "S", "M", "L", "XL", "XXL", "FREIGHT"}
-        weight_class = wc_ai if wc_ai in allowed else pick_weight_class_by_kg(est_kg)
+        weight_class = ai_data.get("weight_class") or pick_weight_class_by_kg(est_kg)
         chosen_policy_id = pick_policy_by_weight_class(weight_class)
 
         title, description = generate_listing_content(ai_data, context)
@@ -197,13 +196,13 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
         seen = set()
         unique = []
         for t in cleaned:
-            if t.lower() not in seen:
-                seen.add(t.lower())
+            key = t.lower()
+            if key not in seen:
+                seen.add(key)
                 unique.append(t[:60])
         return ", ".join(unique)[:500]
 
-    tags_it_str = _join_tags(ai_data.get("tags_it"))
-    tags_en_str = _join_tags(ai_data.get("tags_en"))
+    tags_str = _join_tags(ai_data.get("tags"))
 
     brand = context.user_data.get("brand", "N/A")
     model = context.user_data.get("model", "N/A")
@@ -212,12 +211,18 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
 
     if ai_data.get("is_motor"):
         title = generate_motor_title(
-            brand, model, ai_data.get("compatible_years", "N/A"),
-            displacement=ai_data.get("displacement")
+            brand,
+            model,
+            ai_data.get("compatible_years", "N/A"),
+            displacement=ai_data.get("displacement"),
         )
         description = generate_motor_description(
             brand=brand,
             model=model,
+            year=year,
+            compatible_years=ai_data.get("compatible_years", "N/A"),
+            color=ai_data.get("color", "N/A"),
+            mpn=mpn,
             engine_type=ai_data.get("engine_type", "N/A"),
             displacement=ai_data.get("displacement", "N/A"),
             bore_stroke=ai_data.get("bore_stroke", "N/A"),
@@ -231,25 +236,17 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
             final_drive=ai_data.get("final_drive", "N/A"),
             recommended_oil=ai_data.get("recommended_oil", "N/A"),
             oil_capacity=ai_data.get("oil_capacity", "N/A"),
-            year=year,
-            compatible_years=ai_data.get("compatible_years", "N/A"),
-            color=ai_data.get("color", "N/A"),
-            mpn=mpn,
-            # EN
-            english_summary_en=ai_data.get("english_summary_en", ""),
-            brand_en=brand,
-            model_en=model,
-            compatible_years_en=ai_data.get("compatible_years_en", ai_data.get("compatible_years", "N/A")),
-            color_en=ai_data.get("color_en", ai_data.get("color", "N/A")),
-            # TAGS
-            tags_it=tags_it_str,
-            tags_en=tags_en_str,
+            description=ai_data.get("description", ""),
+            tags=tags_str,
         )
     else:
-        part_for_title = ai_data.get("part_type_short") or ai_data.get("part_type", "N/A")
+        part_for_title = ai_data.get("part_type", "Part")
         title = generate_part_title(
-            part_for_title, brand, model, ai_data.get("compatible_years", "N/A"),
-            color=ai_data.get("color")
+            part_for_title,
+            brand,
+            model,
+            ai_data.get("compatible_years", "N/A"),
+            color=ai_data.get("color"),
         )
         description = generate_part_description(
             brand=brand,
@@ -259,15 +256,10 @@ def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
             part_type=ai_data.get("part_type", "N/A"),
             color=ai_data.get("color", "N/A"),
             mpn=mpn,
-            # EN
-            part_type_en=ai_data.get("part_type_en", ""),
-            color_en=ai_data.get("color_en", ai_data.get("color", "N/A")),
-            compatible_years_en=ai_data.get("compatible_years_en", ai_data.get("compatible_years", "N/A")),
-            description_en=ai_data.get("description_en", ""),
-            # TAGS
-            tags_it=tags_it_str,
-            tags_en=tags_en_str,
+            description=ai_data.get("description", ""),
+            tags=tags_str,
         )
+
     return title, description
 
 

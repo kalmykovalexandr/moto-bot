@@ -1,7 +1,18 @@
-from configs.config import FULFILLMENT_POLICIES, WEIGHT_THRESHOLDS, DEFAULT_WEIGHT_CLASS, DEFAULT_FULFILLMENT_POLICY_ID
+from configs.config import FULFILLMENT_POLICIES, DEFAULT_FULFILLMENT_POLICY_ID
 
 _ALLOWED = {"XS", "S", "M", "L", "XL", "XXL", "FREIGHT"}
 
+# SHIPPING CONFIGS
+DEFAULT_WEIGHT_CLASS = "M"
+WEIGHT_THRESHOLDS = {
+    "XS": 0.25,
+    "S": 0.75,
+    "M": 2.0,
+    "L": 5.0,
+    "XL": 20.0,
+    "XXL": 50.0,
+    # FREIGHT: > 50 kg
+}
 
 def pick_weight_class_by_kg(kg: float | None) -> str:
     if kg is None:

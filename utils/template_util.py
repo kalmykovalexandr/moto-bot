@@ -20,7 +20,7 @@ def generate_part_description(**kwargs):
     return tmpl.render(**kwargs)
 
 def generate_motor_title(brand, model, compatible_years, displacement=None):
-    parts = ["Motore", brand, model]
+    parts = ["Engine", brand, model]
     if compatible_years and compatible_years != "N/A":
         parts.append(compatible_years)
     if displacement and str(displacement).strip() and str(displacement).strip() != "N/A":

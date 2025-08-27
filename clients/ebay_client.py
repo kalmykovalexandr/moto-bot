@@ -7,7 +7,7 @@ from configs.config import (
     PAYMENT_POLICY_ID,
     RETURN_POLICY_ID,
     MERCHANT_LOCATION_KEY,
-    DEFAULT_FULFILLMENT_POLICY_ID,
+    MARKETPLACE_ID,
 )
 
 
@@ -29,11 +29,8 @@ def publish_item(
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "Content-Language": "it-IT",
+        "Content-Language": "en-US",
     }
-
-    # если из handlers ничего не пришло — используем дефолт
-    effective_fpolicy_id = fulfillment_policy_id or DEFAULT_FULFILLMENT_POLICY_ID
 
     sku = f"sku-{str(uuid.uuid4())[:8]}"
 
@@ -41,8 +38,7 @@ def publish_item(
         "availability": {"shipToLocationAvailability": {"quantity": 1}},
         "condition": "USED_EXCELLENT",
         "conditionDescription": (
-            "Parte usata con segni di usura estetici, perfettamente funzionante. "
-            "Controlla le foto per le condizioni esatte. / Used part with cosmetic wear, "
+            "Used part with cosmetic wear, "
             "fully functional. Please check images for exact condition."
         ),
         "product": {
@@ -52,13 +48,11 @@ def publish_item(
             "brand": brand,
             "mpn": mpn,
             "aspects": {
-                "Marca": [brand],
-                "MPN": [mpn],
-                "Produttore compatibile": [brand],
-                "Tipo": [part_type],
-                "Colore": [color],
-                "Ricambio": ["Sì"],
-                "Destinazione d'uso": ["Parte di ricambio"],
+                "Brand": [brand],
+                "Manufacturer Part Number": [mpn],
+                "Compatible Brand": [brand],
+                "Type": [part_type],
+                "Color": [color],
             },
         },
     }
@@ -74,17 +68,17 @@ def publish_item(
 
     offer_payload = {
         "sku": sku,
-        "marketplaceId": "EBAY_IT",
+        "marketplaceId": MARKETPLACE_ID,
         "format": "FIXED_PRICE",
         "availableQuantity": 1,
         "categoryId": "179753",
         "listingDescription": description,
         "listingPolicies": {
-            "fulfillmentPolicyId": effective_fpolicy_id,
+            "fulfillmentPolicyId": fulfillment_policy_id,
             "paymentPolicyId": PAYMENT_POLICY_ID,
             "returnPolicyId": RETURN_POLICY_ID,
         },
-        "pricingSummary": {"price": {"value": str(price), "currency": "EUR"}},
+        "pricingSummary": {"price": {"value": str(price), "currency": "USD"}},
         "quantityLimitPerBuyer": 1,
         "includeCatalogProductDetails": True,
         "merchantLocationKey": MERCHANT_LOCATION_KEY,

@@ -15,12 +15,11 @@ EBAY_OAUTH_SCOPE="https://api.ebay.com/oauth/api_scope https://api.ebay.com/oaut
 EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
 # EBAY CONFIGS
-MARKETPLACE_ID = "EBAY_IT"
-MERCHANT_LOCATION_KEY = "sezze-warehouse"
+MARKETPLACE_ID = "EBAY_US"
+MERCHANT_LOCATION_KEY = "main-warehouse"
 PAYMENT_POLICY_ID = 273958512015
 RETURN_POLICY_ID = 273958551015
 
-# Fulfillment Policies by weight
 FULFILLMENT_POLICIES = {
     "SHIP_XS": "273958585015",
     "SHIP_S": "273958644015",
@@ -30,16 +29,4 @@ FULFILLMENT_POLICIES = {
     "SHIP_XXL": "273958728015",
     "SHIP_FREIGHT": "273958776015",
 }
-
-# Weight thresholds (kg) used across the app
-WEIGHT_THRESHOLDS = {
-    "XS": 0.25,
-    "S": 0.75,
-    "M": 2.0,
-    "L": 5.0,
-    "XL": 20.0,
-    "XXL": 50.0,
-    # FREIGHT: > 50 kg
-}
-DEFAULT_WEIGHT_CLASS = "M"
 DEFAULT_FULFILLMENT_POLICY_ID = FULFILLMENT_POLICIES["SHIP_M"]
