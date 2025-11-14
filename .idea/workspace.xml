@@ -5,19 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6b61fe38-9da5-40a8-8a6e-21d6f7f703b2" name="Changes" comment="changed 1">
-      <change afterPath="$PROJECT_DIR$/configs/product_profiles.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/product_description.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory_item.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/clients/ebay_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/clients/ebay_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/commands.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/conversation.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/conversation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/listing.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/listing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/ai_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/ai_helper.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/motor_description.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/part_description.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/template_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/template_util.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -273,7 +262,23 @@
       <option name="project" value="LOCAL" />
       <updated>1763114342009</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="changed 1">
+      <option name="closed" value="true" />
+      <created>1763128172021</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1763128172021</updated>
+    </task>
+    <task id="LOCAL-00025" summary="changed 1">
+      <option name="closed" value="true" />
+      <created>1763128736811</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1763128736811</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
