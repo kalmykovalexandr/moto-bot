@@ -51,14 +51,28 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     user_data = context.user_data
 
-    if not message or not message.photo:
-        await message.reply_text("Please send a valid image file.")
-        return ASKING_PRICE
+    def _current_state():
+        return ASKING_PRICE if user_data.get(PRICE_PROMPT_SENT) else ASKING_PHOTOS
 
-    photos = message.photo
-    largest_photo = max(photos, key=lambda p: p.file_size)
-    tg_file = await largest_photo.get_file()
-    temp_path = f"temp_{message.from_user.id}.jpg"
+    if not message:
+        return _current_state()
+
+    tg_file = None
+    temp_path = f"temp_{message.from_user.id}.img"
+
+    if message.photo:
+        largest_photo = max(message.photo, key=lambda p: p.file_size)
+        tg_file = await largest_photo.get_file()
+    elif (
+        message.document
+        and message.document.mime_type
+        and message.document.mime_type.startswith("image/")
+    ):
+        tg_file = await message.document.get_file()
+    else:
+        await message.reply_text("Please send a valid image file (JPEG/PNG).")
+        return _current_state()
+
     await tg_file.download_to_drive(temp_path)
 
     user_data.setdefault(IMAGE_URLS, [])
