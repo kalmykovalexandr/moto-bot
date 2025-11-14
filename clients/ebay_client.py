@@ -1,7 +1,8 @@
+import logging
 import uuid
 from html import unescape
 from html.parser import HTMLParser
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import requests
 
@@ -13,6 +14,8 @@ from configs.config import (
     RETURN_POLICY_ID,
 )
 
+logger = logging.getLogger(__name__)
+
 INVENTORY_CONDITION = "USED_EXCELLENT"
 INVENTORY_CONDITION_DESCRIPTION = (
     "Pre-owned item with cosmetic wear, fully functional. Please check images for exact condition."
@@ -20,6 +23,7 @@ INVENTORY_CONDITION_DESCRIPTION = (
 DEFAULT_CATEGORY_ID = "179753"
 DEFAULT_CURRENCY = "USD"
 _PLACEHOLDER_STRINGS = {"n/a", "na", "none", "unknown", "not applicable", "unspecified"}
+_MERCHANT_LOCATION_KEY_CACHE: Optional[str] = MERCHANT_LOCATION_KEY if MERCHANT_LOCATION_KEY else None
 
 
 class _HTMLTextExtractor(HTMLParser):
@@ -140,6 +144,7 @@ def _build_offer_payload(
     price: float,
     fulfillment_policy_id: str | None,
     category_id: str | None,
+    merchant_location_key: str,
 ) -> Dict[str, Any]:
     resolved_category = category_id or DEFAULT_CATEGORY_ID
     return {
@@ -157,10 +162,44 @@ def _build_offer_payload(
         "pricingSummary": {"price": {"value": f"{price:.2f}", "currency": DEFAULT_CURRENCY}},
         "quantityLimitPerBuyer": 1,
         "includeCatalogProductDetails": True,
-        "merchantLocationKey": MERCHANT_LOCATION_KEY,
+        "merchantLocationKey": merchant_location_key,
         "tax": {"applyTax": False},
         "hideBuyerDetails": False,
     }
+
+
+def _fetch_merchant_location_key(headers: Dict[str, str]) -> Optional[str]:
+    params = {"limit": 1}
+    try:
+        response = requests.get(
+            "https://api.ebay.com/sell/inventory/v1/location",
+            headers=headers,
+            params=params,
+            timeout=15,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.error("Failed to fetch eBay inventory locations: %s", exc)
+        return None
+
+    data = response.json()
+    for location in data.get("locations") or []:
+        key = (location.get("merchantLocationKey") or "").strip()
+        if key:
+            return key
+
+    logger.error("No inventory locations returned from eBay.")
+    return None
+
+
+def _resolve_merchant_location_key(headers: Dict[str, str]) -> Optional[str]:
+    global _MERCHANT_LOCATION_KEY_CACHE
+    if _MERCHANT_LOCATION_KEY_CACHE:
+        return _MERCHANT_LOCATION_KEY_CACHE
+    key = _fetch_merchant_location_key(headers)
+    if key:
+        _MERCHANT_LOCATION_KEY_CACHE = key
+    return _MERCHANT_LOCATION_KEY_CACHE
 
 
 def publish_item(
@@ -179,6 +218,12 @@ def publish_item(
 ) -> str:
     token, _ = get_access_token()
     headers = _build_headers(token)
+    location_key = _resolve_merchant_location_key(headers)
+    if not location_key:
+        return (
+            "Failed to resolve eBay inventory location. Please verify MERCHANT_LOCATION_KEY "
+            "or configure a default inventory location in eBay."
+        )
     sku = f"sku-{str(uuid.uuid4())[:8]}"
 
     inventory_payload = _build_inventory_payload(
@@ -209,6 +254,7 @@ def publish_item(
         price=price,
         fulfillment_policy_id=fulfillment_policy_id,
         category_id=category_id,
+        merchant_location_key=location_key,
     )
     offer_response = requests.post(
         "https://api.ebay.com/sell/inventory/v1/offer",
