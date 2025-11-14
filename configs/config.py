@@ -1,4 +1,28 @@
 import os
+from typing import Optional
+
+_REQUIRED_ENV_VARS = [
+    "EBAY_CLIENT_ID",
+    "EBAY_CLIENT_SECRET",
+    "EBAY_REFRESH_TOKEN",
+    "EBAY_REDIRECT_URI",
+    "OPENAI_API_KEY",
+    "TELEGRAM_BOT_TOKEN",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+]
+
+
+def _get_env(name: str, *, required: bool = True, default: Optional[str] = None) -> Optional[str]:
+    value = os.getenv(name, default)
+    if required and not value:
+        raise RuntimeError(f"Environment variable {name} is required.")
+    return value
+
+
+for _env_name in _REQUIRED_ENV_VARS:
+    _get_env(_env_name)  # validate eagerly
 
 # MAIN CONFIGS
 EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
@@ -10,8 +34,9 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+EBAY_CATEGORY_TREE_ID = os.getenv("EBAY_CATEGORY_TREE_ID", "0")
 
-EBAY_OAUTH_SCOPE="https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
+EBAY_OAUTH_SCOPE = "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
 EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
 # EBAY CONFIGS

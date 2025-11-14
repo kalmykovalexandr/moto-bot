@@ -5,7 +5,7 @@ import logging
 from telegram.ext import ApplicationBuilder
 
 from configs.config import TELEGRAM_BOT_TOKEN
-from handlers.handlers import create_conv_handler, register_handlers, error_handler
+from handlers import create_conv_handler, register_handlers, error_handler
 
 app_tg = None
 _polling_task = None
