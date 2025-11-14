@@ -43,7 +43,7 @@ def suggest_category(query: str) -> Tuple[Optional[str], Optional[str]]:
 
     token, _ = get_access_token()
     url = (
-        f"https://api.ebay.com/sell/metadata/v1/category_tree/"
+        f"https://api.ebay.com/commerce/taxonomy/v1_beta/category_tree/"
         f"{EBAY_CATEGORY_TREE_ID}/get_category_suggestions"
     )
     params = {"q": query}

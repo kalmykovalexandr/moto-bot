@@ -4,6 +4,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 MAX_TITLE_LEN = 80
+_PLACEHOLDER_VALUES = {"n/a", "na", "none", "unknown", "unspecified"}
 
 _TEMPLATES_DIR = Path("templates")
 _env = Environment(
@@ -20,12 +21,14 @@ def compose_listing_title(
     brand: str | None,
     model: str | None,
 ) -> str:
-    base = _normalize_spaces(ai_title or user_hint or "Product")
+    base = _sanitize_component(ai_title) or _sanitize_component(user_hint) or "Product"
     extras = []
-    if brand and brand.lower() not in base.lower():
-        extras.append(brand)
-    if model and model.lower() not in base.lower():
-        extras.append(model)
+    clean_brand = _sanitize_component(brand)
+    clean_model = _sanitize_component(model)
+    if clean_brand and clean_brand.lower() not in base.lower():
+        extras.append(clean_brand)
+    if clean_model and clean_model.lower() not in base.lower():
+        extras.append(clean_model)
     candidate = " ".join([base] + extras).strip()
     if not candidate:
         candidate = "Product"
@@ -45,6 +48,15 @@ def _safe_text(value: Any) -> Any:
     if isinstance(value, list):
         return [str(item).strip() for item in value if str(item).strip()]
     return value
+
+
+def _sanitize_component(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = _normalize_spaces(value)
+    if not cleaned or cleaned.lower() in _PLACEHOLDER_VALUES:
+        return None
+    return cleaned
 
 
 def _normalize_spaces(text: str) -> str:
