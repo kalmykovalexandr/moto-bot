@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 MAX_TITLE_LEN = 80
@@ -11,40 +13,44 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-def generate_motor_description(**kwargs):
-    tmpl = _env.get_template("motor_description.html")
-    return tmpl.render(**kwargs)
 
-def generate_part_description(**kwargs):
-    tmpl = _env.get_template("part_description.html")
-    return tmpl.render(**kwargs)
+def compose_listing_title(
+    ai_title: str | None,
+    user_hint: str | None,
+    brand: str | None,
+    model: str | None,
+) -> str:
+    base = _normalize_spaces(ai_title or user_hint or "Product")
+    extras = []
+    if brand and brand.lower() not in base.lower():
+        extras.append(brand)
+    if model and model.lower() not in base.lower():
+        extras.append(model)
+    candidate = " ".join([base] + extras).strip()
+    if not candidate:
+        candidate = "Product"
+    return _cut_to(candidate, MAX_TITLE_LEN)
 
-def generate_motor_title(brand, model, compatible_years, displacement=None):
-    parts = ["Engine", brand, model]
-    if compatible_years and compatible_years != "N/A":
-        parts.append(compatible_years)
-    if displacement and str(displacement).strip() and str(displacement).strip() != "N/A":
-        parts.append(str(displacement).strip())
-    title = _normalize_spaces(" ".join(parts))
-    return _cut_to(title, MAX_TITLE_LEN)
 
-def generate_part_title(part_type_for_title, brand, model, compatible_years, color=None):
-    tail_parts = [brand, model]
-    if compatible_years and compatible_years != "N/A":
-        tail_parts.append(compatible_years)
-    if color and str(color).strip() and str(color).strip() != "N/A":
-        tail_parts.append(str(color).strip())
-    tail = _normalize_spaces(" ".join(tail_parts))
+def generate_product_description(template_name: str, **kwargs: Any) -> str:
+    tmpl = _env.get_template(template_name)
+    normalized = {key: _safe_text(value) for key, value in kwargs.items()}
+    return tmpl.render(**normalized)
 
-    leftover = MAX_TITLE_LEN - len(tail) - 1
-    leftover = max(10, leftover)
 
-    head = _cut_to(part_type_for_title, leftover)
-    return f"{head} {tail}"
+def _safe_text(value: Any) -> Any:
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text else "N/A"
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return value
 
-def _normalize_spaces(s: str) -> str:
-    return " ".join(str(s).split())
 
-def _cut_to(s: str, n: int) -> str:
-    s = _normalize_spaces(s)
-    return s if len(s) <= n else s[:n].rstrip()
+def _normalize_spaces(text: str) -> str:
+    return " ".join(str(text).split())
+
+
+def _cut_to(text: str, limit: int) -> str:
+    cleaned = _normalize_spaces(text)
+    return cleaned if len(cleaned) <= limit else cleaned[:limit].rstrip()

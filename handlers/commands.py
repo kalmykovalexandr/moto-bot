@@ -1,18 +1,18 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from configs.product_profiles import find_profile, get_profile, list_profiles
 from .constants import (
-    ASKING_BRAND,
-    ASKING_MODEL,
+    ASKING_PHOTOS,
     ASKING_PRICE,
-    ASKING_YEAR,
-    BRAND,
+    COLLECTING_DETAILS,
     IMAGE_URLS,
-    MODEL,
-    MPN,
+    PROFILE_ANSWERS,
+    PROFILE_FIELD_INDEX,
+    PROFILE_FIELDS,
+    PROFILE_ID,
     SESSION_ACTIVE,
     TRANSIENT_SESSION_KEYS,
-    YEAR,
 )
 from .listing import delete_cloudinary_images_async
 
@@ -23,14 +23,15 @@ async def show_session_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Session is not active. Start with /start.")
         return
 
-    summary = (
-        "*Current session:*\n"
-        f"- Brand: *{data.get(BRAND, 'N/A')}*\n"
-        f"- Model: *{data.get(MODEL, 'N/A')}*\n"
-        f"- Year: *{data.get(YEAR, 'N/A')}*\n"
-        f"- MPN: *{data.get(MPN, 'N/A')}*\n"
-    )
-    await update.message.reply_text(summary, parse_mode="Markdown")
+    profile = get_profile(data.get(PROFILE_ID))
+    answers = data.get(PROFILE_ANSWERS, {})
+    lines = [
+        f"*Current session ({profile.name}):*",
+    ]
+    for field in profile.fields:
+        value = answers.get(field.key, "N/A") or "N/A"
+        lines.append(f"- {field.prompt.split('(')[0].strip()}: *{value}*")
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -40,7 +41,8 @@ async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/end - End the current session\n"
         "/session - Show current session data\n"
         "/back - Go one step back\n"
-        "/continue - Skip to the next part\n"
+        "/continue - Start a new product without ending the session\n"
+        "/profile - View or select a product profile\n"
         "/help - Show this help message\n\n"
         "Send one of the commands to proceed."
     )
@@ -63,27 +65,52 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for key in TRANSIENT_SESSION_KEYS:
             user_data.pop(key, None)
         await update.message.reply_text("Returning to photo upload. Please send photo(s) again:")
-        return ASKING_PRICE
+        return ASKING_PHOTOS
 
-    if MPN in user_data:
-        user_data.pop(MPN, None)
-        await update.message.reply_text("Returning to year input. Please re-enter the year:")
-        return ASKING_YEAR
-
-    if YEAR in user_data:
-        user_data.pop(YEAR, None)
-        await update.message.reply_text("Returning to model input. Please re-enter the model:")
-        return ASKING_MODEL
-
-    if MODEL in user_data:
-        user_data.pop(MODEL, None)
-        await update.message.reply_text("Returning to brand input. Please re-enter the brand:")
-        return ASKING_BRAND
+    fields = user_data.get(PROFILE_FIELDS) or []
+    idx = user_data.get(PROFILE_FIELD_INDEX, 0)
+    answers = user_data.get(PROFILE_ANSWERS, {})
+    if idx > 0 and fields:
+        field = fields[idx - 1]
+        answers.pop(field.key, None)
+        user_data[PROFILE_ANSWERS] = answers
+        user_data[PROFILE_FIELD_INDEX] = idx - 1
+        prompt = field.prompt
+        if field.optional:
+            prompt += " (type 'skip' to leave blank)"
+        await update.message.reply_text(f"Returning to previous question:\n{prompt}")
+        return COLLECTING_DETAILS
 
     await update.message.reply_text("Nothing to go back to.")
     return ConversationHandler.END
 
 
 async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Send photo(s) of the next part:")
-    return ASKING_PRICE
+    await update.message.reply_text("Send photo(s) of the next product:")
+    return ASKING_PHOTOS
+
+
+async def handle_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args if context.args else []
+    if not args:
+        profiles = list_profiles()
+        lines = ["Available profiles:"]
+        for profile in profiles:
+            lines.append(f"- *{profile.id}*: {profile.name} — {profile.description}")
+        lines.append("\nUse /profile <id> to select one (e.g., /profile generic).")
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    requested = args[0].lower()
+    profile = find_profile(requested)
+    if not profile:
+        await update.message.reply_text(
+            f"Unknown profile '{requested}'. Use /profile to view available options."
+        )
+        return
+
+    context.user_data[PROFILE_ID] = profile.id
+    await update.message.reply_text(
+        f"Profile set to *{profile.name}*. Use /start to begin a session.",
+        parse_mode="Markdown",
+    )

@@ -2,7 +2,14 @@ import logging
 
 from telegram.ext import CommandHandler, MessageHandler, filters
 
-from .commands import handle_back, handle_continue, show_help, show_session_data, unknown_input
+from .commands import (
+    handle_back,
+    handle_continue,
+    handle_profile,
+    show_help,
+    show_session_data,
+    unknown_input,
+)
 from .conversation import end
 
 logger = logging.getLogger(__name__)
@@ -15,6 +22,7 @@ def register_handlers(app, conv_handler):
     app.add_handler(CommandHandler("help", show_help))
     app.add_handler(CommandHandler("back", handle_back))
     app.add_handler(CommandHandler("continue", handle_continue))
+    app.add_handler(CommandHandler("profile", handle_profile))
     app.add_handler(MessageHandler(filters.ALL, unknown_input))
 
 

@@ -13,7 +13,7 @@ from configs.config import (
 
 INVENTORY_CONDITION = "USED_EXCELLENT"
 INVENTORY_CONDITION_DESCRIPTION = (
-    "Used part with cosmetic wear, fully functional. Please check images for exact condition."
+    "Pre-owned item with cosmetic wear, fully functional. Please check images for exact condition."
 )
 DEFAULT_CATEGORY_ID = "179753"
 DEFAULT_CURRENCY = "USD"
@@ -37,19 +37,22 @@ def _build_inventory_payload(
     model: str,
     mpn: str,
     color: str,
-    part_type: str,
-    compatible_years: str,
+    material: str,
+    product_type: str,
 ) -> Dict[str, Any]:
-    aspects = {
-        "Brand": [brand],
-        "Model": [model],
-        "Manufacturer Part Number": [mpn],
-        "Compatible Brand": [brand],
-        "Type": [part_type],
-        "Color": [color],
-    }
-    if compatible_years and compatible_years != "N/A":
-        aspects["Compatible Years"] = [compatible_years]
+    aspects = {}
+    if brand and brand != "N/A":
+        aspects["Brand"] = [brand]
+    if model and model != "N/A":
+        aspects["Model"] = [model]
+    if mpn and mpn != "N/A":
+        aspects["Manufacturer Part Number"] = [mpn]
+    if product_type and product_type != "N/A":
+        aspects["Type"] = [product_type]
+    if color and color != "N/A":
+        aspects["Color"] = [color]
+    if material and material != "N/A":
+        aspects["Material"] = [material]
 
     return {
         "sku": sku,
@@ -104,10 +107,10 @@ def publish_item(
     model: str,
     mpn: str,
     color: str,
+    material: str,
+    product_type: str,
     image_urls: list[str],
     price: float,
-    compatible_years: str,
-    part_type: str,
     fulfillment_policy_id: str | None = None,
     category_id: str | None = None,
 ) -> str:
@@ -124,8 +127,8 @@ def publish_item(
         model=model,
         mpn=mpn,
         color=color,
-        part_type=part_type,
-        compatible_years=compatible_years,
+        material=material,
+        product_type=product_type,
     )
 
     inv_response = requests.put(

@@ -1,0 +1,29 @@
+<!-- eBay-safe HTML -->
+<div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#222;">
+    <h2 style="margin:0 0 8px 0; font-size:16px;">Description</h2>
+    <p>
+        <strong>{{ product_type }}</strong><br/>
+        Brand: <strong>{{ brand }}</strong><br/>
+        Model: <strong>{{ model }}</strong><br/>
+        Color: <strong>{{ color }}</strong><br/>
+        Material: <strong>{{ material }}</strong><br/>
+        Condition: <strong>{{ condition }}</strong><br/>
+        Included items: <strong>{{ included_items }}</strong>
+    </p>
+
+    {% if features %}
+    <h3 style="margin:12px 0 6px 0;">Key Features</h3>
+    <ul style="padding-left:18px; margin:0 0 12px 0;">
+        {% for feature in features %}
+        <li>{{ feature }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <p style="font-size:13px; color:#333;">{{ description }}</p>
+
+    {% if tags %}
+    <h3 style="margin:12px 0 6px 0;">Keywords</h3>
+    <p style="font-size:12px; color:#666;">{{ tags }}</p>
+    {% endif %}
+</div>

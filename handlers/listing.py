@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Dict
+from typing import Dict, List
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -9,18 +9,14 @@ from telegram.ext import ContextTypes
 from clients.cloudinary_client import delete_image, upload_image
 from clients.ebay_client import publish_item
 from clients.ebay_metadata_client import suggest_category
-from helpers.ai_helper import analyze_motorcycle_part
+from configs.product_profiles import get_profile
+from helpers.ai_helper import analyze_product
 from utils.shipping_util import (
     WEIGHT_THRESHOLDS,
     pick_policy_by_weight_class,
     pick_weight_class_by_kg,
 )
-from utils.template_util import (
-    generate_motor_description,
-    generate_motor_title,
-    generate_part_description,
-    generate_part_title,
-)
+from utils.template_util import compose_listing_title, generate_product_description
 
 from .constants import (
     AI_DATA_FETCHED,
@@ -30,20 +26,22 @@ from .constants import (
     CATEGORY_NAME,
     CLOUDINARY_IDS,
     COLOR,
-    COMPATIBLE_YEARS,
+    CONDITION,
     DESCRIPTION,
     ESTIMATED_WEIGHT,
     FULFILLMENT_POLICY_ID,
     IMAGE_URLS,
+    MATERIAL,
     MPN,
     MODEL,
-    PART_TYPE,
     PHOTO_PROCESSING,
     PRICE_PROMPT_SENT,
+    PRODUCT_TYPE,
+    PROFILE_ANSWERS,
+    PROFILE_ID,
     TITLE,
     TRANSIENT_SESSION_KEYS,
     WEIGHT_CLASS,
-    YEAR,
 )
 
 logger = logging.getLogger(__name__)
@@ -87,18 +85,29 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ASKING_PRICE
 
     user_data[PHOTO_PROCESSING] = True
+    profile = get_profile(context.user_data.get(PROFILE_ID))
+    answers = context.user_data.get(PROFILE_ANSWERS, {})
+
     try:
-        ai_data = await analyze_motorcycle_part(
+        ai_data = await analyze_product(
             image_url=user_data[IMAGE_URLS][0],
-            brand=user_data.get(BRAND),
-            model=user_data.get(MODEL),
-            year=user_data.get(YEAR),
+            hints=answers,
+            profile_hint=profile.ai_hint,
             weight_thresholds=WEIGHT_THRESHOLDS,
         )
         est_kg = ai_data.get("estimated_weight_kg")
         weight_class = ai_data.get("weight_class") or pick_weight_class_by_kg(est_kg)
         policy_id = pick_policy_by_weight_class(weight_class)
-        title, description = generate_listing_content(ai_data, context)
+
+        brand = _pick_value(ai_data.get("brand"), answers.get("brand"))
+        model = _pick_value(ai_data.get("model"), answers.get("model"))
+        color = _pick_value(ai_data.get("color"), answers.get("color"))
+        material = _pick_value(ai_data.get("material"), answers.get("material"))
+        product_type = _pick_value(ai_data.get("product_type"), answers.get("title_hint"), "Product")
+        condition = _pick_value(ai_data.get("condition"), answers.get("condition"), "Used")
+        mpn = _pick_value(ai_data.get("mpn"), answers.get("sku"))
+
+        title, description = generate_listing_content(ai_data, context, profile, answers)
 
         user_data.update(
             {
@@ -107,9 +116,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 FULFILLMENT_POLICY_ID: policy_id,
                 TITLE: title,
                 DESCRIPTION: description,
-                COLOR: ai_data.get("color", "N/A"),
-                COMPATIBLE_YEARS: ai_data.get("compatible_years", "N/A"),
-                PART_TYPE: ai_data.get("part_type", "N/A"),
+                COLOR: color or "N/A",
+                MATERIAL: material or "N/A",
+                PRODUCT_TYPE: product_type or "Product",
+                CONDITION: condition or "Used",
+                BRAND: brand or "N/A",
+                MODEL: model or "N/A",
+                MPN: mpn or "N/A",
                 AI_DATA_FETCHED: True,
             }
         )
@@ -163,10 +176,10 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             model=data.get(MODEL),
             mpn=data.get(MPN),
             color=data.get(COLOR, "N/A"),
+            material=data.get(MATERIAL, "N/A"),
+            product_type=data.get(PRODUCT_TYPE, "Product"),
             image_urls=data[IMAGE_URLS],
             price=price,
-            compatible_years=data.get(COMPATIBLE_YEARS, "N/A"),
-            part_type=data.get(PART_TYPE, "N/A"),
             fulfillment_policy_id=data.get(FULFILLMENT_POLICY_ID),
             category_id=data.get(CATEGORY_ID),
         )
@@ -181,7 +194,7 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ASKING_PRICE
 
     conclude_listing_session(context)
-    await message.reply_text("Do you want to list another part? Send photos now or /end to finish.")
+    await message.reply_text("Do you want to list another product? Send photos now or /end to finish.")
     return ASKING_PRICE
 
 
@@ -190,79 +203,86 @@ def conclude_listing_session(context: ContextTypes.DEFAULT_TYPE):
         context.user_data.pop(key, None)
 
 
-def generate_listing_content(ai_data: Dict, context: ContextTypes.DEFAULT_TYPE):
-    def join_tags(tags):
-        cleaned = []
-        seen = set()
-        for tag in tags or []:
-            tag_str = str(tag).strip()
-            if not tag_str:
-                continue
-            key = tag_str.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            cleaned.append(tag_str[:60])
-        return ", ".join(cleaned)[:500]
-
-    tags_str = join_tags(ai_data.get("tags"))
+def generate_listing_content(
+    ai_data: Dict,
+    context: ContextTypes.DEFAULT_TYPE,
+    profile,
+    answers: Dict,
+):
+    tags_str = _join_tags(ai_data.get("tags"))
+    features = _clean_features(ai_data.get("features"))
     brand = context.user_data.get(BRAND, "N/A")
     model = context.user_data.get(MODEL, "N/A")
-    year = context.user_data.get(YEAR, "N/A")
-    mpn = context.user_data.get(MPN, "N/A")
+    product_type = context.user_data.get(PRODUCT_TYPE, "Product")
+    color = context.user_data.get(COLOR, "N/A")
+    material = context.user_data.get(MATERIAL, "N/A")
+    condition = context.user_data.get(CONDITION, "Used")
+    included_items = ai_data.get("included_items", "N/A")
+    description_body = ai_data.get("description", "")
 
-    if ai_data.get("is_motor"):
-        title = generate_motor_title(
-            brand=brand,
-            model=model,
-            compatible_years=ai_data.get("compatible_years", "N/A"),
-            displacement=ai_data.get("displacement"),
-        )
-        description = generate_motor_description(
-            brand=brand,
-            model=model,
-            year=year,
-            compatible_years=ai_data.get("compatible_years", "N/A"),
-            color=ai_data.get("color", "N/A"),
-            mpn=mpn,
-            engine_type=ai_data.get("engine_type", "N/A"),
-            displacement=ai_data.get("displacement", "N/A"),
-            bore_stroke=ai_data.get("bore_stroke", "N/A"),
-            compression_ratio=ai_data.get("compression_ratio", "N/A"),
-            max_power=ai_data.get("max_power", "N/A"),
-            max_torque=ai_data.get("max_torque", "N/A"),
-            cooling=ai_data.get("cooling", "N/A"),
-            fuel_system=ai_data.get("fuel_system", "N/A"),
-            starter=ai_data.get("starter", "N/A"),
-            gearbox=ai_data.get("gearbox", "N/A"),
-            final_drive=ai_data.get("final_drive", "N/A"),
-            recommended_oil=ai_data.get("recommended_oil", "N/A"),
-            oil_capacity=ai_data.get("oil_capacity", "N/A"),
-            description=ai_data.get("description", ""),
-            tags=tags_str,
-        )
-    else:
-        part_for_title = ai_data.get("part_type", "Part")
-        title = generate_part_title(
-            part_type_for_title=part_for_title,
-            brand=brand,
-            model=model,
-            compatible_years=ai_data.get("compatible_years", "N/A"),
-            color=ai_data.get("color"),
-        )
-        description = generate_part_description(
-            brand=brand,
-            model=model,
-            year=year,
-            compatible_years=ai_data.get("compatible_years", "N/A"),
-            part_type=ai_data.get("part_type", "N/A"),
-            color=ai_data.get("color", "N/A"),
-            mpn=mpn,
-            description=ai_data.get("description", ""),
-            tags=tags_str,
-        )
+    title = compose_listing_title(
+        ai_title=ai_data.get("title"),
+        user_hint=answers.get("title_hint"),
+        brand=brand,
+        model=model,
+    )
+
+    description = generate_product_description(
+        template_name=profile.template,
+        product_type=product_type,
+        brand=brand,
+        model=model,
+        color=color,
+        material=material,
+        condition=condition,
+        included_items=included_items,
+        features=features,
+        description=description_body,
+        tags=tags_str,
+    )
 
     return title, description
+
+
+def _join_tags(tags: List[str] | None) -> str:
+    cleaned = []
+    seen = set()
+    for tag in tags or []:
+        tag_str = str(tag).strip()
+        if not tag_str:
+            continue
+        key = tag_str.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(tag_str[:60])
+    return ", ".join(cleaned)[:500]
+
+
+def _clean_features(features: List[str] | None) -> List[str]:
+    result = []
+    seen = set()
+    for feature in features or []:
+        text = str(feature).strip()
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(text[:120])
+        if len(result) >= 8:
+            break
+    return result
+
+
+def _pick_value(*candidates):
+    for value in candidates:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if value and not isinstance(value, str):
+            return value
+    return None
 
 
 async def delete_cloudinary_images_async(context: ContextTypes.DEFAULT_TYPE):

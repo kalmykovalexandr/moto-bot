@@ -1,9 +1,8 @@
-ASKING_BRAND, ASKING_MODEL, ASKING_YEAR, ASKING_MPN, ASKING_PRICE = range(5)
+COLLECTING_DETAILS, ASKING_PHOTOS, ASKING_PRICE = range(3)
 
 SESSION_ACTIVE = "session_active"
 BRAND = "brand"
 MODEL = "model"
-YEAR = "year"
 MPN = "mpn"
 IMAGE_URLS = "image_urls"
 CLOUDINARY_IDS = "cloudinary_public_ids"
@@ -16,19 +15,23 @@ FULFILLMENT_POLICY_ID = "fulfillment_policy_id"
 TITLE = "title"
 DESCRIPTION = "description"
 COLOR = "color"
-COMPATIBLE_YEARS = "compatible_years"
-PART_TYPE = "part_type"
+PRODUCT_TYPE = "product_type"
 PHOTO_UPLOADED_FLAG = "photo_uploaded_once"
 CATEGORY_ID = "category_id"
 CATEGORY_NAME = "category_name"
+MATERIAL = "material"
+CONDITION = "condition"
+PROFILE_ID = "profile_id"
+PROFILE_FIELD_INDEX = "profile_field_index"
+PROFILE_FIELDS = "profile_fields"
+PROFILE_ANSWERS = "profile_answers"
 
 TRANSIENT_SESSION_KEYS = [
     IMAGE_URLS,
     TITLE,
     DESCRIPTION,
     COLOR,
-    PART_TYPE,
-    COMPATIBLE_YEARS,
+    PRODUCT_TYPE,
     AI_DATA_FETCHED,
     PHOTO_UPLOADED_FLAG,
     CLOUDINARY_IDS,
@@ -38,4 +41,6 @@ TRANSIENT_SESSION_KEYS = [
     FULFILLMENT_POLICY_ID,
     CATEGORY_ID,
     CATEGORY_NAME,
+    MATERIAL,
+    CONDITION,
 ]
